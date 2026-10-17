@@ -145,6 +145,9 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
 #cv{width:100%;height:auto;display:block;touch-action:manipulation;cursor:crosshair}
 #banner{position:absolute;left:0;right:0;top:34%;text-align:center;font-family:'Bangers',Impact,sans-serif;font-size:54px;color:var(--gold);-webkit-text-stroke:2px #1a1633;text-shadow:4px 4px 0 #1a1633;pointer-events:none;opacity:0;line-height:1}
 #banner.go{animation:ban 1.8s ease-out}
+#skipbox{position:absolute;left:8px;top:8px;z-index:5;display:flex;align-items:center;gap:8px;background:rgba(10,8,24,.88);border:3px solid var(--gold);border-radius:999px;padding:3px 5px 3px 12px;color:#fff;font-weight:700;font-size:13px;line-height:1.2}
+#skipbox button{padding:2px 10px;font-size:12px;line-height:1.3}
+.sd-ab.on{background:var(--gold);color:#1a1633}
 @keyframes ban{0%{opacity:0;transform:scale(2.2) rotate(-6deg)}15%{opacity:1;transform:scale(1) rotate(-3deg)}75%{opacity:1}100%{opacity:0;transform:scale(1) rotate(-3deg) translateY(-14px)}}
 #over{position:absolute;inset:0;background:rgba(10,8,24,.82);display:flex;align-items:center;justify-content:center;line-height:1.4;padding:12px}
 #over .panel{text-align:center;max-width:380px}
@@ -195,7 +198,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
 
 <div class="wrap" id="lobby">
   <header class="top">
-    <div class="logo">MALFUNCTION<span>TD</span><small>UDP 0</small></div>
+    <div class="logo">MALFUNCTION<span>TD</span><small>UDP 0.5</small></div>
     <button class="pill" id="l-log" title="See what is new in this update">📜 Update Log<span id="l-logdot" class="logdot" hidden></span></button>
     <div class="pills"><span class="pill" id="gems"></span><span class="pill" id="sp"></span><button class="pill" id="l-mute" aria-label="Toggle sound">🔊</button><input type="range" id="l-vol" min="0" max="100" value="80" aria-label="Sound effects volume" title="Sound effects volume" style="width:90px;accent-color:var(--acc)"><span title="Music volume">🎵</span><input type="range" id="l-mvol" min="0" max="100" value="60" aria-label="Music volume" title="Music volume" style="width:90px;accent-color:var(--acc2)"><button class="pill" id="l-dev" title="Developer tools">🛠 Dev</button><button class="pill" id="l-help">❓ How to play</button></div>
   </header>
@@ -236,7 +239,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
           <button class="primary" id="pull10">Summon ×10 · 1000 💎</button>
           <button class="btn" id="pullmax" style="background:var(--gold);color:#1a1633">Max Summon</button>
         </div>
-        <p style="font-size:12px;margin:10px 0 0;opacity:.85">Duplicates add a ★ (+10% DMG, up to 5★). Evolved forms (Shinigami Ichigo, Crit Merchant, Megumi's awakening, Slime God) are not on the banner. Evolve them from the Units tab.</p>
+        <p style="font-size:12px;margin:10px 0 0;opacity:.85">Duplicates add a ★ (+10% DMG, or +30% income for dedicated farm units, up to 5★). Evolved forms (Shinigami Ichigo, Crit Merchant, Megumi's awakening, Slime God) are not on the banner. Evolve them from the Units tab.</p>
       </div>
       <div class="panel"><div class="pulls" id="pulls"><span class="mut">Your pulls show up here.</span></div></div>
     </div>
@@ -265,7 +268,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
     <span class="chip yen" id="h-yen"></span>
     <span class="sp"></span>
     <button class="primary" id="b-start"></button>
-    <button class="btn" id="b-auto">Auto</button>
+    <button class="btn" id="b-auto" title="Auto Skip: starts each next wave by itself a few seconds after the last enemy spawns">Auto Skip</button>
     <button class="btn" id="b-speed">1×</button>
     <button class="btn" id="b-mgr" title="Unit Manager (F)">Units (F)</button>
     <button class="btn" id="b-sellall" title="Sell every placed unit">Sell All</button>
@@ -277,7 +280,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
   <div class="gwrap">
     <div class="cwrap">
       <canvas id="cv" width="900" height="540"></canvas>
-      <div id="banner"></div>
+      <div id="banner"></div><div id="skipbox" hidden></div>
       
       <div id="pausebox" hidden><div class="panel"><h2>PAUSED</h2><p>All gameplay is stopped. You can't place, upgrade, sell or use abilities until you resume.</p><p style="margin:6px 0"><label>🔊 SFX <input type="range" id="p-vol" min="0" max="100" value="80" style="accent-color:var(--acc);vertical-align:middle"></label></p><p style="margin:6px 0"><label>🎵 Music <input type="range" id="p-mvol" min="0" max="100" value="60" style="accent-color:var(--acc2);vertical-align:middle"></label></p><div class="row"><button class="primary" id="p-res">Resume</button><button class="btn" id="p-quit">Quit run</button></div></div></div>
       <div id="over" hidden></div>
@@ -357,7 +360,7 @@ U('Epic','wolf','Storm Dog','Tempest Wolf','🐺','dps',250,0.8,120,{fastDmg:1.3
 U('Epic','orihime','Bread','Orihime','🍞','support',150,0.9,150,{heal:.04,cleanse:true,aura:{dmg:.1},p:'Support: heals allies in range 4% max HP/s, +10% DMG aura, and wears off stuns and debuffs 3× faster.',a:[{n:'Soten Kisshun',d:'Heal and revive every unit to full HP and cleanse all debuffs.',cd:30,u:3,t:'heal'}]});
 U('Epic','puri','Grape','Puri-Puri-Prisoner','🍇','dps',270,1.1,120,{hp:200,pulse:[5,1.2],p:'Unwanted Attention: every 5s, stuns enemies in range for 1.2s. 2× HP.'});
 U('Epic','nobara','Nails','Nobara','🔨','dps',260,1.2,135,{dot:'bleed',p:'Straw Doll: hits cause Bleed (60% DMG over 6s).',a:[{n:'Resonance',d:'6× DMG to every bleeding enemy on the map.',cd:30,u:3,t:'dotblast',m:6}]});
-U('Epic','subaru','Pleiades','Subaru','🔄','dps',280,1.0,125,{hp:150,maxPlace:1,rbd:.005,p:'RBD: for each % of HP missing, attack 0.5% faster. Limited to 1 placement.',a:[{n:'Return by Death',d:'Restore to full HP and +100% DMG for 8s.',cd:45,u:3,t:'buff',dmg:1,dur:8,heal:true}]});
+U('Epic','subaru','Pleiades','Subaru','🔄','dps',280,1.0,125,{hp:150,maxPlace:1,rbd:.005,p:'RBD: for each % of Tower HP missing, attack 0.5% faster. Limited to 1 placement.',a:[{n:'Return by Death',d:'Restore to full HP and +100% DMG for 8s.',cd:45,u:3,t:'buff',dmg:1,dur:8,heal:true}]});
 U('Epic','yojin','Pest','Yoo Jinho','🌾','farm',300,1.45,120,{income:250, maxPlace:2,p:'Harvest Season: +110¥ at the end of every wave (grows with level).',a:[{n:'Harvest',d:'Instantly gain 300¥.',cd:60,u:4,t:'cash',amt:300}]});
 U('Epic','uryu','Glasses Archer','Uryu','🏹','dps',290,1.25,160,{crit:[.2,2.2],p:'Quincy Precision: 20% crit for 2.2× DMG. Long range.',a:[{n:'Licht Regen',d:'8 strikes of 1.5× DMG on random enemies.',cd:40,u:3,t:'random',hits:8,m:1.5}]});
 U('Epic','ace','Fire Fist','Ace','☄️','dps',300,1.25,125,{dot:'burn',p:'Flame Body: hits Burn (50% DMG over 3s).',a:[{n:'Hiken',d:'4× DMG to every enemy within 1.3× range.',cd:35,u:3,t:'nova',m:4,rm:1.3}]});
@@ -366,7 +369,7 @@ U('Epic','gobta2','Goba (Named)','Gobta, named','👺','dps',280,0.95,115,{evo:t
 
 /* ---------- LEGENDARY ---------- */
 U('Legendary','yami','Bull Captain','Yami','🐂','dps',900,1.65,130,{bossDmg:1.5,p:'Dark Zone: +50% DMG to bosses.',a:[{n:'Black Slash',d:'6× DMG to every enemy in range.',cd:40,u:3,t:'nova',m:6}]});
-U('Legendary','veg','Vegetable','Vegeta','🥦','dps',850,1.65,135,{grow:{wave:.03,cap:.6},p:'Saiyan Pride: +3% DMG per wave survived (max +60%).',a:[{n:'Final Flash',d:'10× DMG to the strongest enemy on the map.',cd:50,u:5,t:'beam',m:10}]});
+U('Legendary','veg','Vegetable','Vegeta','🥦','dps',850,1.65,135,{grow:{wave:.03,cap:.6},rival:{ids:['goku','goku2'],dmg:.3},p:'Saiyan Pride: +3% DMG per wave survived (max +60%). Saiyan Rivalry: if Monkey Kid or Super Monkey is in range, +30% DMG to both units.',a:[{n:'Final Flash',d:'10× DMG to the strongest enemy on the map.',cd:50,u:5,t:'beam',m:10}]});
 U('Legendary','goku2','Super Monkey','Goku','🐒','dps',1000,1.75,135,{evo:true,zen:{per:.2, cap:0.5},p:'Zenkai: each kill makes attacks 2% faster (max 50%).',a:[{n:'Kamehameha',d:'5× DMG to every enemy within 1.6× range.',cd:45,u:3,t:'nova',m:5,rm:1.6},{n:'Super Saiyan',d:'Transform for 25s: 2× DMG, 15% faster, +15% range (Mythic-tier power).',cd:90,u:5,t:'transform',dur:25,dmg:2,spa:.85,rng:1.15}]});
 U('Legendary','urahara','Candy Shop Owner','Urahara','🎩','support',400,1.55,140,{income:100,aura:{rng:.15,dmg:.1},p:'Support + Farm: allies in range get +15% range and +10% DMG. +100¥ per wave.'});
 U('Legendary','finger','Finger Holder','Finger Bearer','🫵','dps',800,1.6,125,{grow:{wave:.08,cap:1.6},p:'Twenty Fingers: +8% DMG per wave survived (max +160%).'});
@@ -374,8 +377,8 @@ U('Legendary','yuji','Superhuman High Schooler','Yuji','👊','dps',800,1.9,110,
 U('Legendary','naruto','Orange Ninja','Naruto','🍥','dps',850,1.95,125,{hp:150,pierce:3,p:'Shadow Clones: hits 3 enemies at once.',a:[{n:'Sage Mode',d:'+120% DMG for 12s.',cd:60,u:4,t:'buff',dmg:1.2,dur:12}]});
 U('Legendary','garp','Marine Hero','Garp','🪖','dps',900,1.85,115,{hp:300,bossDmg:1.3,p:'Fist of Love: +30% DMG to bosses. 3× HP.',a:[{n:'Galaxy Impact',d:'5× DMG to every enemy within 1.2× range.',cd:45,u:4,t:'nova',m:5,rm:1.2}]});
 U('Legendary','subaru2','Amazing Guy','Subaru, evolved','🔄','support',850,1.65,130,{evo:true,hp:250,maxPlace:1,lionheart:true,rbd:.004,rbdDmg:.004,rbdAlly:.002,
-  p:'RBD: for each % of HP missing, attacks 0.4% faster and deals +0.4% DMG. Allies in range attack 0.2% faster per % missing (max 30%). Limited to 1 placement.',
-  a:[{n:'Lion Heart',d:'Choose an ally. Take damage and debuffs in their stead. Lasts until you pick a new unit or turn it off.',cd:0,u:3,t:'lionheart'}]});
+  p:'RBD: for each % of Tower HP missing, attacks 0.4% faster and deals +0.4% DMG. Allies in range attack 0.2% faster per % missing (max 30%). Limited to 1 placement.',
+  a:[{n:'Lion Heart',d:'Choose an ally. They are immune to status effects and take only 25% of damage; Subaru takes the other 75%. Lasts until you pick a new unit, turn it off, or Subaru is down.',cd:0,u:3,t:'lionheart'}]});
 U('Legendary','veldora','Rain Dragon','Veldora','🐉','support',300,1.5,145,{aura:{dmg:.2,rng:.1},p:'Support: allies in range deal +20% DMG and get +10% range. Needs a name to unlock its full power.',a:[{n:'Storm Breath',d:'3× DMG to every enemy in range.',cd:45,u:4,t:'nova',m:3}]});
 U('Legendary','beni','Oni King','Benimaru','🔥','dps',850,1.95,130,{dot:'burn',p:'Black Flame: hits Burn (50% DMG over 3s). Needs a name to unlock its full power.',a:[{n:'Flame Burst',d:'5× DMG to every enemy within 1.2× range.',cd:40,u:4,t:'nova',m:5,rm:1.2}]});
 U('Legendary','gobchief2','Goblin Chief (Named)','Rigurd','👑','support',400,1.55,145,{evo:true,aura:{spa:.2,dmg:.15,rng:.1},p:'Support: allies in range attack 20% faster, deal +15% DMG and get +10% range.'});
@@ -512,6 +515,7 @@ const aoeTxt=d=>{const a=aoeOf(d);return d.role==='farm'?'Does not attack.':a.al
 
 /* ---------- Items & evolutions ---------- */
 const ITEMS={
+  scrystal:{n:'Star Crystal',ic:'🌟',d:'Adds a ★ to a unit without needing a duplicate (max 5★). Use it from the unit\'s page in the Units tab. '},
   crystal:{n:'System Crystal',ic:'🔮',d:'Rolls a System upgrade for one unit.'},
   badge:  {n:'Soul Badge',    ic:'🏅',d:'Drops in Soul Society. Evolves Ichigo.'},
   finger: {n:'Cursed Finger', ic:'☝️',d:'Drops in Cursed Alley. Evolves Yuji.'},
@@ -562,9 +566,11 @@ const QS=[
  {id:'q3',n:'Arise',d:'Clear the Special Dungeon Raid with A-Rank Hunter and obtain Igris. Evolves him into S-Rank.',ok:g=>g.map.id==='special'&&g.lo.includes('sjw3')&&!!SAVE.inv.igris},
  {id:'q4',n:'Island Raid',d:'Clear the Island Raid with S-Rank Hunter and obtain Beru.',ok:g=>g.map.id==='island'&&g.lo.includes('sjw4')&&!!SAVE.inv.beru},
  {id:'q5',n:"Monarch's Trial",d:'Clear the Monarch Trial (Trials section) with S-Rank Hunter, Igris and Beru to get the Cup of Rebirth, then sacrifice them to awaken the Shadow Monarch.',ok:g=>g.map.id==='monarch'&&['sjw4','igris','beru'].every(x=>g.lo.includes(x))}];
-const SHOP=[];[['tok_special',['badge','finger']],['tok_island',['seal','dball']],['tok_monarch',['witch','core']]].forEach(([t,l])=>{SHOP.push({t,i:'crystal',c:2});l.forEach(i=>SHOP.push({t,i,c:7}))});
+const SHOPQ={badge:5,finger:5,seal:5,dball:7,witch:5};   // evolution items come in the amount needed for one evolution (5 Fingers covers Yuji and Sukuna's cheaper one)
+const SHOP=[];[['tok_special',['badge','finger']],['tok_island',['seal','dball']],['tok_monarch',['witch','core']]].forEach(([t,l])=>{SHOP.push({t,i:'crystal',c:2});l.forEach(i=>SHOP.push({t,i,c:7,q:SHOPQ[i]||1}))});
 SHOP.push({t:'tok_special',i:'ahjin',c:25});
 SHOP.push({t:'tok_slime',i:'crystal',c:2});SHOP.push({t:'tok_slime',i:'nametag',c:5});   // Slime Raid shop
+['tok_special','tok_island','tok_monarch','tok_slime'].forEach(t=>SHOP.push({t,i:'scrystal',c:15}));   // Star Crystals: 15 tokens in every raid shop
 const INTERMISSION=8;   // seconds before the next wave is forced to start
 
 /* ---------- Maps (hp = difficulty multiplier, drops = what a clear can give) ---------- */
@@ -607,7 +613,7 @@ const MAPS=[
 /* ---------- System tree: ONE path per unit, rolled with 🔮 System Crystals ----------
    Each roll moves the unit one step down the tree. Where the tree forks, the roll picks a branch at random. */
 MAPS.forEach(m=>{m.drops=m.drops.filter(d=>d.id!=='crystal')});   // System Crystals now come from raid shops
-MAPS.find(m=>m.id==='dungeon').drops.push({unit:'sjw',p:.2});
+MAPS.find(m=>m.id==='dungeon').drops.push({unit:'sjw',p:.1});
 const INF=MAPS.find(m=>m.id==='infinity');
 [{id:'special',name:'Special Dungeon Raid',desc:'A red gate. Something worthy of Arise waits inside.',waves:30,hp:3.0,gems:900,bossName:'Blood Commander',need:'q2',drops:[{unit:'igris',p:.33,pity:3},{id:'tok_special',p:1,min:5,max:8}]},
  {id:'island',name:'Island Raid',desc:'Ants swarm the island. Their king is near.',waves:30,hp:3.5,gems:1100,bossName:'Ant King',need:'q3',drops:[{unit:'beru',p:.33,pity:3},{id:'tok_island',p:1,min:5,max:8}]},
@@ -820,7 +826,7 @@ function unitCard(u,extra){
   return `<div class="ucard ${own?'':'unowned'} ${extra||''}" tabindex="0" data-id="${u.id}" style="--rc:${RAR[u.r].c}">
     <div class="ic">${own?u.ic:'❔'}</div><div class="nm">${own?u.n:(u.evo?'Evolved form':'???')}</div><div class="rr">${u.r}</div><div class="st">${'★'.repeat(st)}</div></div>`;
 }
-function renderHeader(){$('#gems').textContent='💎 '+fmt(SAVE.gems);$('#sp').textContent='🔮 '+item('crystal');updateMuteBtns()}
+function renderHeader(){$('#gems').textContent='💎 '+fmt(SAVE.gems);$('#sp').textContent='🔮 '+item('crystal')+(item('scrystal')?' · 🌟 '+item('scrystal'):'');updateMuteBtns()}
 let MV=-1,DRAG=-1;   // MV = slot selected in the battle team, DRAG = slot being dragged
 function slotFix(el){
   const b=el.id==='loadout-b';if(MV>=SAVE.loadout.length)MV=-1;
@@ -847,8 +853,10 @@ function dropText(m){
   }).join(' · ');
 }
 const MO={s:true,r:false,t:true};
+function mapOpen(m,i){const hasU=SAVE.loadout.length>0;return (SAVE.devUnlock&&hasU)||(m.raid?(!m.needMap||SAVE.cleared[m.needMap])&&hasU:(i===0||SAVE.cleared[MAPS[i-1].id]||MAPS.slice(i).some(x=>SAVE.cleared[x.id]))&&hasU)}
+function nextMap(m){const kind=x=>x.trial?'t':x.raid?'r':'s';for(let j=MAPS.indexOf(m)+1;j<MAPS.length;j++){if(kind(MAPS[j])===kind(m))return mapOpen(MAPS[j],j)?MAPS[j]:null}return null}   // the next map of the same kind, if you can play it
 function mapCard(m,i){
-  const hasU=SAVE.loadout.length>0,open=(SAVE.devUnlock&&hasU)||(m.raid?(!m.needMap||SAVE.cleared[m.needMap])&&hasU:(i===0||SAVE.cleared[MAPS[i-1].id]||MAPS.slice(i).some(x=>SAVE.cleared[x.id]))&&hasU),done=SAVE.cleared[m.id];
+  const hasU=SAVE.loadout.length>0,open=mapOpen(m,i),done=SAVE.cleared[m.id];
   return `<div class="panel map ${open?'':'locked'}">${done?'<span class="tag">CLEARED ✔</span>':''}<h2>${m.name}</h2>
     <div class="thumb" style="background:linear-gradient(135deg,${m.bg},${m.road})"></div><div class="mut">${m.desc}</div>
     <p style="margin:8px 0 0">${m.endless?'Endless':m.waves+' waves'}${m.endless?'':' · 💎'+m.gems+'+'}</p><p class="drops">Drops: ${dropText(m)}${!m.raid&&!m.endless&&!done?' · First clear: 🔮 ×2':''}</p>
@@ -880,7 +888,7 @@ function renderShop(){   // sidebar of raid shops + one full shop page for the s
   $('#shopnav').innerHTML=L.map(x=>`<button class="${x.t===SHOPSEL?'primary':'btn'}" data-shop="${x.t}" style="text-align:left">${ITEMS[x.t].ic} ${x.m?x.m.name:ITEMS[x.t].n}<br><small>${item(x.t)} ${ITEMS[x.t].n}</small></button>`).join('');
   const cur=L.find(x=>x.t===SHOPSEL);if(!cur){$('#shopbox').innerHTML='';return}
   const nm=cur.m?cur.m.name:'Raid';
-  $('#shopbox').innerHTML=`<div class="panel" style="min-height:62vh"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center"><h2 style="font-size:36px">${nm} Shop</h2><span class="pill" style="font-size:18px">${ITEMS[cur.t].ic} ${item(cur.t)} ${ITEMS[cur.t].n}</span></div><p class="mut">Earn ${ITEMS[cur.t].n}s by clearing ${nm}, then spend them here.</p><div class="sgrid">`+SHOP.map((r,k)=>r.t===cur.t?`<div class="scard"><b>${ITEMS[r.i].ic} ${ITEMS[r.i].n}</b><br><span class="mut" style="font-size:12px">${ITEMS[r.i].d}</span><br>${r.c}× ${ITEMS[r.t].ic} ${ITEMS[r.t].n}<br><button class="primary" data-buy="${k}" ${item(r.t)>=r.c?'':'disabled'}>Buy</button></div>`:'').join('')+'</div></div>';
+  $('#shopbox').innerHTML=`<div class="panel" style="min-height:62vh"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center"><h2 style="font-size:36px">${nm} Shop</h2><span class="pill" style="font-size:18px">${ITEMS[cur.t].ic} ${item(cur.t)} ${ITEMS[cur.t].n}</span></div><p class="mut">Earn ${ITEMS[cur.t].n}s by clearing ${nm}, then spend them here.</p><div class="sgrid">`+SHOP.map((r,k)=>r.t===cur.t?`<div class="scard"><b>${ITEMS[r.i].ic} ${r.q>1?r.q+'× ':''}${ITEMS[r.i].n}</b><br><span class="mut" style="font-size:12px">${ITEMS[r.i].d}</span><br>${r.q>1?'<b>'+r.q+' for</b> ':''}${r.c}× ${ITEMS[r.t].ic} ${ITEMS[r.t].n}<br><button class="primary" data-buy="${k}" ${item(r.t)>=r.c?'':'disabled'}>Buy</button></div>`:'').join('')+'</div></div>';
 }
 function evoReqs(id,ev){
   const L=[];let ok=true;const ck=(c,s)=>{L.push((c?'✅ ':'❌ ')+s);if(!c)ok=false};
@@ -1045,6 +1053,13 @@ function openUnit(id){
       <p style="margin:6px 0">Requirements:<br>${r.lines.join('<br>')}</p><button class="primary" data-evo="${ev.to}" ${r.ok?'':'disabled'}>Evolve</button></div>`;
   });
   if(evs.length>1)evoHtml='<p><b>Choose how to evolve:</b></p>'+evoHtml;
+  const starHtml=`<div class="evo" style="border-style:solid"><b>🌟 Star Crystal</b> <span class="mut">(you have ${item('scrystal')})</span><br><span class="mut">Adds 1★ to this unit without a duplicate. Currently ${st}★ of 5.</span><div class="row" style="margin-top:6px"><button class="btn" id="m-star" ${st<5&&item('scrystal')>0?'':'disabled'}>${st>=5?'Max stars':'Use 1 🌟'}</button></div></div>`;
+  const xf=[];   // Star Transfer pairs [from,to] that involve this unit
+  evs.forEach(ev=>{if(SAVE.inv[ev.to]&&DEF[ev.to])xf.push([id,ev.to])});
+  if(EVO_FROM[id]&&SAVE.inv[EVO_FROM[id]])xf.push([EVO_FROM[id],id]);
+  const xferHtml=xf.length?'<div class="evo" style="border-style:solid"><b>⭐ Star Transfer</b><br><span class="mut">Move ★ from a pre-evolution to its evolved form without evolving again. Costs 1 🔮 System Crystal per ★ (you have '+item('crystal')+').</span>'+xf.map(([a,b])=>{
+    const A=DEF[a],B=DEF[b],k=Math.min(Math.max(0,SAVE.inv[a]-1),Math.max(0,5-stars(b))),kAll=Math.min(k,item('crystal'));
+    return `<p style="margin:6px 0">${A.ic} ${A.n} (${stars(a)}★) → ${B.ic} ${B.n} (${stars(b)}★)</p><div class="row" style="flex-wrap:wrap"><button class="btn" data-xf="${a}|${b}|1" ${k>=1&&item('crystal')>=1?'':'disabled'}>Transfer 1★ · 1 🔮</button><button class="btn" data-xf="${a}|${b}|${kAll}" ${kAll>=2?'':'disabled'}>Transfer ${Math.max(kAll,2)>kAll?'all':kAll+'★'}${kAll>=2?' ('+kAll+'★) · '+kAll+' 🔮':''}</button></div>`}).join('')+'</div>':'';
   const S=modOf(id);
   m.hidden=false;
   m.innerHTML=`<div class="panel" style="border-color:${RAR[u.r].c}">
@@ -1058,13 +1073,15 @@ function openUnit(id){
     ${u.p?`<p><b>Passive</b><br>${u.p}</p>`:''}<p><b>Attack</b><br>${aoeTxt(u)}</p>
     ${actLines(u)}
     <p><b>System path</b></p><div class="chain">${pathChips(id)}</div>${SAVE.sys2[id]?'<p><b>4DV4NC3D P4TH</b> <span class="mut">(only active as Leader)</span></p><div class="chain">'+pathChips2(id)+'</div>':''}
-    ${evoHtml}
+    ${evoHtml}${xferHtml}${starHtml}
     <div class="row" style="flex-wrap:wrap"><button class="primary" id="m-eq">${eq?'Remove from team':'Add to team'}</button><button class="btn" id="m-lead">👑 Make Leader</button><button class="btn" id="m-sys">⚙ System path</button><button class="btn" id="m-x">Close</button></div></div>`;
   $('#m-x').onclick=()=>m.hidden=true;
   lvTabs(id,1);
   $('#m-sys').onclick=()=>{sysSel=id;m.hidden=true;openSys()};
   $('#m-lead').onclick=()=>{SAVE.loadout=[id].concat(SAVE.loadout.filter(x=>x!==id)).slice(0,6);save();renderAll();m.hidden=true;toast(u.n+' is now your Leader')};
   $$('#modal [data-evo]').forEach(b=>{b.onclick=()=>evolve(id,b.dataset.evo)});
+  $('#m-star').onclick=()=>{if(stars(id)>=5||item('scrystal')<1)return;SAVE.items.scrystal--;SAVE.inv[id]++;MODC={};save();renderAll();openUnit(id);toast(u.n+' gained a ★');sfx('evolve')};
+  $$('#modal [data-xf]').forEach(b=>{b.onclick=()=>{const p=b.dataset.xf.split('|');starXfer(p[0],p[1],+p[2],id)}});
   $('#m-eq').onclick=()=>{
     const i=SAVE.loadout.indexOf(id);
     if(i>=0)SAVE.loadout.splice(i,1);
@@ -1085,6 +1102,14 @@ function lvTabs(id,L){   // raw stats and costs for each upgrade level
   $('#m-stats').innerHTML=(F?c('Cash/wave','¥'+fmt(u.income*(1+.25*(L-1)))):c('Damage/hit',fmt(u.dps*u.spa*k))+c('Cooldown',u.spa+'s')+c('DPS',fmt(u.dps*k)))+c('Range',Math.round(u.rng*(1+.04*(L-1))))+c('HP',u.hp||100)+c('Cost',L>1?fmt(up)+'¥ (upgrade)':cst+'¥')+c('Max placed',maxOf(u))+c('Copies',own)+(F?'':c('Crit',critStr(u,{critRate:0,critDmg:0})))+c('Lifetime kills',fmt(SAVE.kills[id]||0));
 }
 function openSys(){renderSystem();$('#sysmodal').hidden=false}
+function starXfer(from,to,k,viewId){   // Star Transfer: 1 System Crystal per ★ moved from a pre-evolution to its owned evolved form
+  if(!SAVE.inv[from]||!SAVE.inv[to])return;
+  k=Math.min(k,Math.max(0,SAVE.inv[from]-1),Math.max(0,5-stars(to)));
+  if(k<=0){deny('Nothing to transfer');return}
+  if(item('crystal')<k){deny('You need '+k+' 🔮 System Crystal'+(k>1?'s':''));return}
+  SAVE.items.crystal-=k;SAVE.inv[from]-=k;SAVE.inv[to]+=k;
+  MODC={};save();renderAll();openUnit(viewId);toast(k+'★ moved from '+DEF[from].n+' to '+DEF[to].n);sfx('evolve');
+}
 function evolve(id,to){
   const ev=(EVO[id]||[]).find(o=>!to||o.to===to);if(!ev||!SAVE.inv[id])return;
   if(!evoReqs(id,ev).ok){toast('Requirements not met');return}
@@ -1158,15 +1183,19 @@ function summon(n){
   save();renderAll();showPulls(res);
 }
 /* ---------- Auto-fill: build the strongest team, with the Leader chosen for its 4DV4NC3D P4TH and Tags ---------- */
-function effDps(u,L,team){   // rough damage-per-second estimate (used only by Auto-fill)
+const AREA_ALL=5,PLACE_W=.85;   // Autofill: enemies a 'hits everything in range' unit typically catches; value of each extra placement
+function areaMul(u){const a=aoeOf(u);if(a.n<=1)return 1;const extra=(a.all?AREA_ALL:a.n)-1,cov=a.all?1:Math.min(1,.35+a.r/70);return 1+extra*AOE_FALL*cov}   // Area DPS: expected enemies hit per attack
+const placeMul=u=>1+(Math.max(1,maxOf(u))-1)*PLACE_W;   // every placement a unit may have adds damage (or income)
+const effDps=(u,L,team)=>effDps0(u,L,team)*placeMul(u);
+function effDps0(u,L,team){   // rough damage-per-second estimate (used only by Auto-fill)
   let v=u.dps*(1+.1*stars(u.id))*(1+(u.dmgBuff||0));
   v*=u.crit?1+u.crit[0]*(u.crit[1]-1):1.025;
-  if(u.pierce)v*=1+.5*(u.pierce-1);
+  v*=areaMul(u);   // splash, pierce and hit-all units hit more enemies
   if(u.dbl)v*=1+u.dbl;
   if(u.nth)v*=1+(u.nth[1]-1)/u.nth[0];
   if(u.dot)v*=1+DOTS[u.dot].x;
   if(u.poison)v*=1+u.poison[0];
-  if(u.role==='farm')return u.income?u.income*1.5:0;   // farm units never attack, so value their income instead
+  if(u.role==='farm')return u.income?u.income*1.5*(1+FARM_STAR*stars(u.id)):0;   // farm units never attack, so value their income instead
   if(L){   // the Leader passive (+10% DMG/RNG, -10% SPA per shared Tag; Leader gets +5% per teammate sharing a Tag)
     const x=u.id===L.id?.05*team.filter(m=>m.id!==L.id&&m.tags.some(t=>L.tags.includes(t))).length:.1*u.tags.filter(t=>L.tags.includes(t)).length;
     v*=(1+x)/Math.max(.3,1-x);
@@ -1185,6 +1214,7 @@ function teamScore(team,L){
     if(u.auraSlow)s+=sum*.3*u.auraSlow;
     if(u.heal)s+=sum*.1;
   }
+  {const v=team.find(u=>u.id==='veg'),g=team.find(u=>u.id==='goku2')||team.find(u=>u.id==='goku');if(v&&g)s+=.3*(effDps(v,L,team)+effDps(g,L,team))}   // Saiyan Rivalry
   return s;
 }
 function autoEquip(leaderId){
@@ -1196,7 +1226,7 @@ function autoEquip(leaderId){
   // 2) Teammates: greedily add whoever raises total team damage the most. Tag synergy only counts through the numbers,
   //    so a similarly tagged unit is skipped whenever the team is stronger without it. Keep 2 cheap units so you can start.
   const cheap=u=>costOf(u)<=450,CH=0;   // no forced cheap units: Pest and Ahjin CEO cost the whole starter money
-  const farm=lead.role==='farm'?null:own.filter(u=>u.role==='farm'&&!clash([lead.id],u.id)).sort((a,b)=>(b.income||0)-(a.income||0))[0];   // keep one slot for a farm unit
+  const farm=lead.role==='farm'?null:own.filter(u=>u.role==='farm'&&!clash([lead.id],u.id)).sort((a,b)=>effDps(b)-effDps(a))[0];   // keep one slot for a farm unit
   const pool=own.filter(u=>u!==lead&&u!==farm),team=[lead];if(farm)team.push(farm);
   while(team.length<6&&pool.length){
     const forced=Math.max(0,CH-team.filter(cheap).length)>=6-team.length&&pool.some(cheap),base=teamScore(team,lead);
@@ -1236,7 +1266,21 @@ function freePull(){
 
 /* ---------- Update Log (newest entry first: add a new object at the top for each update) ---------- */
 const UPDATE_LOG=[
- {v:'Update 0.5',sub:'Raids, paths and quality of life',sections:[
+ {v:'Update 0.5',rev:3,sub:'Raids, paths and quality of life',sections:[
+  {h:'✨ New this patch: quality of life',items:[
+   'Your <b>game speed</b> (1× to 3×) is remembered and stays the same in every game.',
+   '<b>Active abilities</b> can now be used straight from a selected unit\'s menu on the map. The buttons only control that unit.',
+   '<b>Star Transfer</b>: move ★ from a pre-evolution to its evolved form (like Monkey Kid to Super Monkey) without evolving again. Costs 1 🔮 System Crystal per ★. Open either unit to find it.',
+   '<b>Raid shops</b> now sell <b>🌟 Star Crystals</b> for 15 tokens each: use one on a unit to add a ★ with no duplicate.',
+   'Evolution items in the raid shops come in the amount one evolution needs: 5 Soul Badges, 5 Shikigami Seals, 5 Witch Factors, 7 Dragon Balls, and 5 Cursed Fingers (enough for Yuji; Sukuna needs 10).',
+   'A <b>Next map ▶</b> button on the victory screen takes you straight to the next map you can play.',
+   'Dupe ★ now give <b>dedicated farm units +30% income each</b> (up to +150% at 5★), including their Harvest ability.',
+   '<b>Autofill Team</b> now counts every placement a unit can have, so a weaker unit with more placements can win a slot. It also scores <b>Area DPS</b>: how many enemies a unit hits or can hit.',
+   '<b>Auto Skip</b> (the old Auto button): once every enemy of a wave has spawned, a short timer starts the next wave without waiting for the rest to be cleared. With Auto Skip off, a <b>Skip Wave?</b> prompt appears at the top of the map instead.']},
+  {h:'🐞 New this patch: fixes',items:[
+   '<b>Subaru</b> and <b>Subaru, evolved</b>: RBD now follows the missing HP of your <b>Tower</b> (🏯 base), not the unit\'s own HP.',
+   '<b>Lion Heart</b> now makes the protected ally immune to status effects (stuns, curses, Time Warp, Silence) and splits damage: Subaru takes 75%, the ally takes 25%. It works until Subaru goes down.',
+   '<b>Vegeta</b> gains <i>Saiyan Rivalry</i>: if Monkey Kid or Super Monkey is in his range, both units deal +30% DMG.']},
   {h:'🖥️ Quality of life',items:[
    'Boss health bars now list the status effects on them: Bleed, Poison, Burn, Stunned, Slowed and Vulnerable.',
    'Unit data is compact and scrolls inside the side bar. The in-game <b>Unit Manager</b> uses the same side bar, and whichever you opened last is the one you see.',
@@ -1283,7 +1327,8 @@ const UPDATE_LOG=[
    'Saves from older builds are upgraded automatically, and evolved units you owned before they became evolved forms now get their 4DV4NC3D P4TH.']}
  ]}
 ];
-function logDot(){const d=$('#l-logdot');if(d)d.hidden=(SAVE.logSeen===UPDATE_LOG[0].v)}
+const logKey=()=>UPDATE_LOG[0].v+(UPDATE_LOG[0].rev?'.r'+UPDATE_LOG[0].rev:'');
+function logDot(){const d=$('#l-logdot');if(d)d.hidden=(SAVE.logSeen===logKey())}
 function openLog(){
   const m=$('#modal');m.hidden=false;
   m.innerHTML='<div class="panel" style="max-width:640px"><h2 style="font-size:34px">Update Log</h2>'+UPDATE_LOG.map((u,i)=>
@@ -1291,7 +1336,7 @@ function openLog(){
     u.sections.map(s=>`<div class="logsec"><h4>${s.h}</h4><ul>${s.items.map(t=>'<li>'+t+'</li>').join('')}</ul></div>`).join('')).join('<hr>')+
     '<div class="row"><button class="btn" id="lg-x">Close</button></div></div>';
   $('#lg-x').onclick=()=>m.hidden=true;
-  SAVE.logSeen=UPDATE_LOG[0].v;save();logDot();
+  SAVE.logSeen=logKey();save();logDot();
 }
 function openHelp(){
   const m=$('#modal');m.hidden=false;
@@ -1351,7 +1396,7 @@ document.addEventListener('click',e=>{
   else if(l&&!l.disabled){const t=(SAVE.teams[+l.dataset.tload]||[]).filter(x=>SAVE.inv[x]).filter((x,i,a)=>!clash(a.slice(0,i),x));if(!t.length){deny('No units from that team are available');return}SAVE.loadout=t.slice(0,6);save();renderAll();toast('Team '+(+l.dataset.tload+1)+' loaded')}
 });
 $('#items').onclick=e=>{const b=e.target.closest('[data-item]');if(b){const i=ITEMS[b.dataset.item];toast(i.ic+' '+i.n+' - '+i.d)}};
-$('#shopbox').onclick=e=>{const b=e.target.closest('[data-buy]');if(!b)return;const r=SHOP[+b.dataset.buy];if(item(r.t)<r.c)return;SAVE.items[r.t]-=r.c;SAVE.items[r.i]=item(r.i)+1;save();renderAll();sfx('upgrade');toast('Bought '+ITEMS[r.i].n)};
+$('#shopbox').onclick=e=>{const b=e.target.closest('[data-buy]');if(!b)return;const r=SHOP[+b.dataset.buy];if(item(r.t)<r.c)return;SAVE.items[r.t]-=r.c;SAVE.items[r.i]=item(r.i)+(r.q||1);save();renderAll();sfx('upgrade');toast('Bought '+(r.q>1?r.q+'× ':'')+ITEMS[r.i].n)};
 ['#l-mvol','#p-mvol'].forEach(s=>{$(s).oninput=e=>{SAVE.mvol=(+e.target.value)/100;applyMVol();syncVol();save()}});
 ['#l-vol','#p-vol'].forEach(s=>{$(s).oninput=e=>{SAVE.vol=(+e.target.value)/100;applyVol();syncVol();save()};$(s).onchange=()=>sfx('upgrade')});
 $('#maps').onclick=e=>{const b=e.target.closest('[data-map]');if(b&&!b.disabled)startGame(b.dataset.map)};
@@ -1411,9 +1456,9 @@ function startGame(mapId){
   const deco=[];for(let i=0;i<70;i++)deco.push([Math.random()*900,Math.random()*540]);
   SAVE.auto={};SAVE.autoUp={};save();   // auto-abilities and auto-upgrade reset every run
   G={theme:themeOf(SAVE.loadout),ghosts:[],reserve:0,lo:SAVE.loadout.slice(),bk:0,low:(mapId==='dungeon'&&!SAVE.quests.q1&&SAVE.loadout.length===1&&SAVE.loadout[0]==='sjw'),map,path:mkPath(map.pts),deco,wave:0,waveActive:false,queue:[],spawnT:0,gap:.8,enemies:[],towers:[],summons:[],fx:vfxArr([]),texts:[],
-     yen:850,base:100,speed:1,paused:false,auto:false,sel:null,placing:null,over:false,time:0,mx:-99,my:-99,kills:0,nextT:0,abilDirty:true,abtns:[],mgrOpen:false,mgrDirty:true,mgrRows:[],mgrAll:null,lhSel:null,mgrQuery:''};
-  $('#lobby').hidden=true;$('#game').hidden=false;$('#over').hidden=true;$('#pausebox').hidden=true;$('#mgr').hidden=true;$('#side').hidden=false;$('#b-mgr').classList.remove('on');
-  $('#b-speed').textContent='1×';musicPlay(map.trial?'trials':map.raid?'raids':'story');if(themeOf(SAVE.loadout))setTimeout(()=>toast('Theme team: '+themeOf(SAVE.loadout)+' (+10% DMG, -5% cooldown)'),300);$('#b-auto').classList.remove('on');$('#b-pause').textContent='Pause';
+     yen:850,base:100,speed:(SAVE.speed>=1&&SAVE.speed<=3?SAVE.speed:1),skipT:-1,paused:false,auto:false,sel:null,placing:null,over:false,time:0,mx:-99,my:-99,kills:0,nextT:0,abilDirty:true,abtns:[],mgrOpen:false,mgrDirty:true,mgrRows:[],mgrAll:null,lhSel:null,mgrQuery:''};
+  $('#lobby').hidden=true;$('#game').hidden=false;$('#over').hidden=true;$('#skipbox').hidden=true;$('#pausebox').hidden=true;$('#mgr').hidden=true;$('#side').hidden=false;$('#b-mgr').classList.remove('on');
+  $('#b-speed').textContent=G.speed+'×';musicPlay(map.trial?'trials':map.raid?'raids':'story');if(themeOf(SAVE.loadout))setTimeout(()=>toast('Theme team: '+themeOf(SAVE.loadout)+' (+10% DMG, -5% cooldown)'),300);$('#b-auto').classList.remove('on');$('#b-pause').textContent='Pause';
   buildHotbar();buildSide();buildAbil();updateHUD();
   lastTs=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(frame);
 }
@@ -1431,8 +1476,11 @@ function buildWave(w,map){
   for(let b=0;b<bosses;b++)q.splice(Math.floor(q.length*(b+1)/(bosses+1)),0,'boss');
   return q;
 }
-function startWave(){
-  if(!G||G.waveActive||G.over||G.paused)return;
+const AUTOSKIP_T=5;   // seconds between the last spawn of a wave and the next wave starting (Auto Skip)
+function canSkip(){return !!G&&!G.over&&!G.paused&&G.waveActive&&!G.queue.length&&G.wave<G.map.waves&&G.enemies.some(e=>!e.dead)}
+function startWave(force){
+  if(!G||G.over||G.paused)return;
+  if(G.waveActive){if(force!==true||!canSkip())return;waveRewards()}   // skipping: the wave you leave behind still pays out
   G.wave++;G.queue=buildWave(G.wave,G.map);G.waveActive=true;G.spawnT=.3;G.gap=Math.max(.28,.9-.02*G.wave);G.nextT=0;
   G.towers.forEach(t=>{if(t.down){t.down=false;t.hp=t.maxhp*.5}});
   const bw=G.queue.includes('boss');banner(bw?`WAVE ${G.wave} — BOSS!`:`WAVE ${G.wave}`);sfx(bw?'boss':'wave');
@@ -1442,19 +1490,20 @@ function spawn(type){
   G.enemies.push({type,def:d,hp,mhp:hp,d:0,x:p[0],y:p[1],sp:d.sp,r:d.r,rew:(8+G.wave*1.6)*d.rew,boss:!!d.boss,fast:!!d.fast,slow:0,slowT:0,aSlow:0,vuln:0,stun:0,dot:null,at:1,bt:3+Math.random()*2,dead:false});
 }
 /* ---------- boss attacks ---------- */
-function redirect(t){for(const s of G.towers){if(s!==t&&!s.down&&s.prot===t&&s.def.lionheart)return s}return t}
-function hurt(t,dmg){
-  t=redirect(t);
+const LH_SHARE=.75;   // Lion Heart: Subaru takes 75% of the damage, the protected ally only 25%
+function lhOf(t){for(const s of G.towers){if(s!==t&&!s.down&&s.prot===t&&s.def.lionheart)return s}return null}   // the living Subaru shielding t, if any
+function hurt(t,dmg){const s=lhOf(t);if(s){hurt0(s,dmg*LH_SHARE);hurt0(t,dmg*(1-LH_SHARE))}else hurt0(t,dmg)}
+function hurt0(t,dmg){
   if(t.down)return;t.hp-=dmg;addText(t.x,t.y-18,'-'+Math.round(dmg),'#ff6a6a',.7);
   if(t.hp<=0){t.hp=0;t.down=true;sfx('down');addText(t.x,t.y-30,'DOWN!','#ff4d6d',1.2,true)}
 }
 const BOSS_MOVES=[
   {n:'Stomp',w:3,f:e=>{G.towers.forEach(t=>{if(!t.down&&dist(t.x,t.y,e.x,e.y)<=150)hurt(t,t.maxhp*.3+6+G.wave*.5)});G.fx.push({k:'ring',x:e.x,y:e.y,r:10,R:150,t:.5,T:.5,col:'#ff6a3d'})}},
-  {n:'Roar',w:2,f:()=>{const L=G.towers.filter(t=>!t.down).sort(()=>Math.random()-.5).slice(0,Math.min(5,1+Math.floor(G.wave/8)));L.forEach(t0=>{const t=redirect(t0);t.stunT=Math.max(t.stunT,3);addText(t.x,t.y-30,'STUNNED','#ffd23f',1.2,true)})}},
-  {n:'Curse',w:2,f:()=>{G.towers.forEach(t0=>{const t=redirect(t0);if(!t.down){t.debD=.2;t.debDt=6}});addText(450,200,'DAMAGE −20%','#c08bff',1.4,true)}},
-  {n:'Time Warp',w:2,f:()=>{G.towers.forEach(t0=>{const t=redirect(t0);if(!t.down){t.debS=.25;t.debSt=6}});addText(450,200,'ATTACKS 25% SLOWER','#7ad7ff',1.4,true)}},
+  {n:'Roar',w:2,f:()=>{const L=G.towers.filter(t=>!t.down).sort(()=>Math.random()-.5).slice(0,Math.min(5,1+Math.floor(G.wave/8)));L.forEach(t=>{if(lhOf(t)){addText(t.x,t.y-30,'PROTECTED','#6fd0ff',1.2,true);return}t.stunT=Math.max(t.stunT,3);addText(t.x,t.y-30,'STUNNED','#ffd23f',1.2,true)})}},
+  {n:'Curse',w:2,f:()=>{G.towers.forEach(t=>{if(!t.down&&!lhOf(t)){t.debD=.2;t.debDt=6}});addText(450,200,'DAMAGE −20%','#c08bff',1.4,true)}},
+  {n:'Time Warp',w:2,f:()=>{G.towers.forEach(t=>{if(!t.down&&!lhOf(t)){t.debS=.25;t.debSt=6}});addText(450,200,'ATTACKS 25% SLOWER','#7ad7ff',1.4,true)}},
   {n:'Energy Blast',w:2,f:e=>{const L=G.towers.filter(t=>!t.down);const t=L[Math.floor(Math.random()*L.length)];G.fx.push({k:'line',x1:e.x,y1:e.y,x2:t.x,y2:t.y,t:.4,T:.4,col:'#ff4d6d',w:7});hurt(t,t.maxhp*.45+8+G.wave*.6)}},
-  {n:'Silence',w:1,f:()=>{G.towers.forEach(t0=>{const t=redirect(t0);if(!t.down)t.silT=6});addText(450,200,'ABILITIES SEALED','#ffd23f',1.4,true)}}
+  {n:'Silence',w:1,f:()=>{G.towers.forEach(t=>{if(!t.down&&!lhOf(t))t.silT=6});addText(450,200,'ABILITIES SEALED','#ffd23f',1.4,true)}}
 ];
 function bossMove(e){
   if(!G.towers.some(t=>!t.down))return;
@@ -1464,7 +1513,10 @@ function bossMove(e){
   G.fx.push({k:'flash',t:.2,T:.2,col:'#ff3d3d'});sfx('down');
 }
 function endWave(){
-  G.waveActive=false;
+  G.waveActive=false;waveRewards();
+  if(G.wave>=G.map.waves)finish(true);else G.nextT=G.auto?1.5:INTERMISSION;
+}
+function waveRewards(){
   let bonus=100+15*G.wave;
   G.towers.forEach(t=>{
     t.waves++;
@@ -1473,7 +1525,6 @@ function endWave(){
   });
   G.yen+=bonus;
   addText(450,300,'+'+fmt(bonus)+'¥','#ffd23f',1.6,true);
-  if(G.wave>=G.map.waves)finish(true);else G.nextT=G.auto?1.5:INTERMISSION;
 }
 function finish(win){
   G.over=true;sfx(win?'win':'lose');$('#mgr').hidden=true;$('#side').hidden=false;
@@ -1495,12 +1546,13 @@ function finish(win){
   else gems=3*w;
   if(win){const q=QS.find(x=>!SAVE.quests[x.id]);if(q&&q.ok(G)){SAVE.quests[q.id]=true;got.push('📜 Quest complete: '+q.n)}}
   SAVE.gems+=gems;save();
-  const o=$('#over');o.hidden=false;
+  const o=$('#over');o.hidden=false;const nx=win?nextMap(m):null;
   o.innerHTML=`<div class="panel"><h2 style="color:${win?'var(--good)':'var(--bad)'}">${win?'VICTORY!':(m.endless?'THE END':'DEFEATED')}</h2>
     <p>Reached wave ${w}${m.endless?'':' of '+m.waves} · ${G.kills} enemies defeated</p>
     <p style="font-size:18px;font-weight:700">+${gems} 💎</p>
     <p>${got.length?got.join('<br>'):(win?'<span class="mut">No item drops this time.</span>':'')}</p>
-    <div class="row"><button class="primary" id="o-again">${win?'Play again':'Try again'}</button><button class="btn" id="o-back">Back to lobby</button></div></div>`;
+    <div class="row">${nx?'<button class="primary" id="o-next">Next map ▶</button>':''}<button class="${nx?'btn':'primary'}" id="o-again">${win?'Play again':'Try again'}</button><button class="btn" id="o-back">Back to lobby</button></div></div>`;
+  if(nx)$('#o-next').onclick=()=>startGame(nx.id);
   $('#o-again').onclick=()=>startGame(m.id);
   $('#o-back').onclick=leaveGame;
 }
@@ -1545,7 +1597,7 @@ function place(i,x,y,fromGhost){
   G.yen-=cost;
   const hp=Math.round((d.hp||100)*(1+modOf(id).hp));
   const t={def:d,mod:modOf(id),auto:!!SAVE.auto[id],autoUp:!!SAVE.autoUp[id],x,y,lvl:1,hp,hp0:hp,maxhp:hp,cd:.2,shots:0,kills:0,waves:0,spent:cost,down:false,mode:'first',cds:d.a.map(()=>5),buff:{t:0,dmg:0},critQ:0,pt:d.pulse?d.pulse[0]:0,
-    dm:d.dps*d.spa,sp:d.spa,rg:d.rng,aD:0,aS:0,aR:0,gD:0,gS:0,gR:0,lD:0,lS:0,lR:0,cl:false,mD:1,mS:1,mR:1,stunT:0,silT:0,debD:0,debDt:0,debS:0,debSt:0,form:{t:0},shrine:{t:0},prot:null};
+    dm:d.dps*d.spa,sp:d.spa,rg:d.rng,aD:0,aS:0,aR:0,gD:0,gS:0,gR:0,lD:0,lS:0,lR:0,cl:false,mD:1,mS:1,mR:1,stunT:0,silT:0,debD:0,debDt:0,debS:0,debSt:0,form:{t:0},shrine:{t:0},prot:null,rvD:0};
   G.towers.push(t);if(!fromGhost){if(G.mgrOpen)toggleMgr(false);G.sel=t;G.placing=null}G.abilDirty=true;G.mgrDirty=true;sfx('place');
   buildSide();buildAbil();updateHotbar();
 }
@@ -1636,6 +1688,7 @@ function toggleAuto(t){
   G.abilDirty=true;updateSide();
 }
 
+const baseMiss=()=>G?clamp(100-G.base,0,100):0;   // % of Tower (base) HP missing: drives Subaru's RBD
 function calc(t){
   const d=t.def,S=t.mod;let n=0,dots=0,boss=false;
   for(const e of G.enemies){if(e.dead)continue;if(dist(t.x,t.y,e.x,e.y)<=t.rg+e.r){n++;if(e.dot)dots++;if(e.boss)boss=true}}
@@ -1648,15 +1701,15 @@ function calc(t){
   }
   if(S.alch)own*=1+Math.min(.1,.01*dots);
   if(d.dmgBuff)own*=1+d.dmgBuff;
-  if(d.rbdDmg)own*=1+d.rbdDmg*(100-100*t.hp/t.maxhp);
+  if(d.rbdDmg)own*=1+d.rbdDmg*baseMiss();
   // ... versus OUTSIDE effects (auras, tag buffs, ability buffs, transformations, boss debuffs), shown as the * multiplier
-  let out=1+t.aD+t.gD+t.lD+(G.theme?THEME.dmg:0);   // ally bonuses add together
+  let out=1+t.aD+t.gD+t.lD+(t.rvD||0)+(G.theme?THEME.dmg:0);   // ally bonuses add together
   if(t.buff.t>0)out*=1+t.buff.dmg;
   if(t.form.t>0)out*=t.form.dmg;
   if(t.debDt>0)out*=1-t.debD;
   t.mD=out;t.dm=d.dps*d.spa*own*out*sjwPen(d);
   let s=d.spa*Math.max(.25,1-S.spa-(S.ninja?Math.min(.05,.005*n):0));
-  if(d.rbd)s*=1-d.rbd*(100-100*t.hp/t.maxhp);
+  if(d.rbd)s*=1-d.rbd*baseMiss();
   if(d.zen)s*=1-Math.min(d.zen.cap,t.kills*d.zen.per);
   let so=Math.max(.3,1-t.aS-t.gS-t.lS-(G.theme?THEME.spa:0));
   if(t.form.t>0)so*=t.form.spa;
@@ -1667,17 +1720,19 @@ function calc(t){
   t.mR=ro;
   t.rg=d.rng*(1+S.rng)*(1+.04*(t.lvl-1))*ro*(boss?1+S.rngBoss:1);
 }
-const cashPer=t=>t.def.income*(1+.25*(t.lvl-1))*(1+stars(t.def.id)*.1)*(1+t.mod.income);
+const FARM_STAR=.3;   // each dupe ★ gives a dedicated farm unit +30% income (other units with income keep +10%)
+const starCash=d=>1+stars(d.id)*(d.role==='farm'?FARM_STAR:.1);
+const cashPer=t=>t.def.income*(1+.25*(t.lvl-1))*starCash(t.def)*(1+t.mod.income);
 function srcOf(t,k){
   const d=t.def,S=t.mod,L=[],add=(v,s)=>{if(Math.abs(v-1)>.004)L.push(v.toFixed(2)+'x '+s)};let tot,nm,base;
   if(k==='dmg'){nm='Damage';base=fmt(d.dps*d.spa);tot=t.dm/(d.dps*d.spa);
     add(1+.1*stars(d.id),'Stars');add(LVLM[t.lvl-1],'Upgrade level');add(1+S.dmg,'System tree');add(1+S.tagDmg*d.tags.length,'4DV4NC3D P4TH (Tags)');add(d.tags.length<=3?1+S.lowTag*(5-d.tags.length):1,'4DV4NC3D P4TH (low-Tag bonus)');
     let g=1;if(d.grow){if(d.grow.kill)g*=1+Math.min(d.grow.cap,t.kills*d.grow.kill);if(d.grow.wave)g*=1+Math.min(d.grow.cap,t.waves*d.grow.wave);if(d.grow.lvl)g*=1+d.grow.lvl*(t.lvl-1)}
-    add(g,d.n+' Passive');add(1+(d.dmgBuff||0),d.n+' Passive');if(d.rbdDmg)add(1+d.rbdDmg*(100-100*t.hp/t.maxhp),d.n+' Passive (missing HP)');
-    add(1+t.aD+t.gD+t.lD+(G.theme?THEME.dmg:0),'Allies, additive'+(G.theme?' + '+G.theme+' theme':'')+' ('+(t.lD?'+'+t.lD.toFixed(2)+' Leader ':'')+(t.aD?'+'+t.aD.toFixed(2)+' '+(t.aDn||'aura'):'')+(t.gD?' +'+t.gD.toFixed(2)+' '+(t.gDn||'tag buff'):'')+' )');
+    add(g,d.n+' Passive');add(1+(d.dmgBuff||0),d.n+' Passive');if(d.rbdDmg)add(1+d.rbdDmg*baseMiss(),d.n+' Passive (missing Tower HP)');
+    add(1+t.aD+t.gD+t.lD+(t.rvD||0)+(G.theme?THEME.dmg:0),'Allies, additive'+(G.theme?' + '+G.theme+' theme':'')+' ('+(t.lD?'+'+t.lD.toFixed(2)+' Leader ':'')+(t.aD?'+'+t.aD.toFixed(2)+' '+(t.aDn||'aura'):'')+(t.gD?' +'+t.gD.toFixed(2)+' '+(t.gDn||'tag buff'):'')+(t.rvD?' +'+t.rvD.toFixed(2)+' Saiyan Rivalry':'')+' )');
     add(sjwPen(d),'Igris/Beru follow-up trade-off');if(t.buff.t>0)add(1+t.buff.dmg,'Active buff');if(t.form.t>0)add(t.form.dmg,'Transformation');if(t.debDt>0)add(1-t.debD,'Boss curse')}
   else if(k==='spa'){nm='Cooldown';base=d.spa+'s';tot=t.sp/d.spa;
-    add(Math.max(.25,1-S.spa),'System tree');if(d.rbd)add(1-d.rbd*(100-100*t.hp/t.maxhp),d.n+' Passive (missing HP)');if(d.zen)add(1-Math.min(d.zen.cap,t.kills*d.zen.per),d.n+' Passive');
+    add(Math.max(.25,1-S.spa),'System tree');if(d.rbd)add(1-d.rbd*baseMiss(),d.n+' Passive (missing Tower HP)');if(d.zen)add(1-Math.min(d.zen.cap,t.kills*d.zen.per),d.n+' Passive');
     add(Math.max(.3,1-t.aS-t.gS-t.lS),'Allies, additive');if(t.form.t>0)add(t.form.spa,'Transformation');if(t.shrine.t>0)add(t.shrine.spa,'Shrine');if(t.debSt>0)add(1+t.debS,'Boss Time Warp')}
   else{nm='Range';base=d.rng;tot=t.rg/d.rng;add(1+.04*(t.lvl-1),'Upgrade level');add(1+S.rng,'System tree');add(1+t.aR+t.gR+t.lR,'Allies, additive');if(t.form.t>0)add(t.form.rng,'Transformation')}
   return nm+' = '+tot.toFixed(2)+'x base ('+base+')\nSource: '+(L.join(', ')||'no modifiers');
@@ -1793,7 +1848,7 @@ function useActive0(t,i){
     case 'buff':{t.buff={t:a.dur,dmg:a.dmg};if(a.heal){t.hp=t.maxhp;t.down=false}break}
     case 'beam':{const e=live().sort((x,y)=>y.hp-x.hp)[0];if(e){blast(t,e,a.m);G.fx.push({k:'line',x1:t.x,y1:t.y,x2:e.x,y2:e.y,t:.5,T:.5,col:'#ffd23f',w:8})}break}
     case 'heal':{G.towers.forEach(x=>{x.hp=x.maxhp;x.down=false;x.stunT=0;x.debDt=0;x.debSt=0;x.silT=0});G.fx.push({k:'flash',t:.4,T:.4,col:'#8dffb0'});break}
-    case 'cash':{const v=a.amt*(1+t.mod.income);G.yen+=v;t.earned=(t.earned||0)+v;addText(t.x,t.y-14,'+'+fmt(v)+'¥','#ffd23f',1.2);break}
+    case 'cash':{const v=a.amt*(1+t.mod.income)*starCash(t.def);G.yen+=v;t.earned=(t.earned||0)+v;addText(t.x,t.y-14,'+'+fmt(v)+'¥','#ffd23f',1.2);break}
     case 'burn':{live().forEach(e=>applyDot(e,t,2*DOTS.burn.x*t.dm/DOTS.burn.y*(1+t.mod.dotDmg),DOTS.burn.y*(1+t.mod.dotDur),'burn'));G.fx.push({k:'flash',t:.4,T:.4,col:'#ff8a3d'});break}
     case 'random':{const L=live();for(let k=0;k<a.hits&&L.length;k++){const e=L[Math.floor(Math.random()*L.length)];blast(t,e,a.m);G.fx.push({k:'line',x1:t.x,y1:t.y,x2:e.x,y2:e.y,t:.3,T:.3,col:'#ff4d6d',w:3})}break}
     case 'crits':{t.critQ+=a.hits;break}
@@ -1840,7 +1895,7 @@ function step(dt){
     while(G.spawnT<=0&&G.queue.length){spawn(G.queue.shift());G.spawnT+=G.gap}
   }
   for(const e of G.enemies){e.aSlow=0;e.vuln=0}
-  for(const t of G.towers){t.aD=t.aS=t.aR=0;t.gD=t.gS=t.gR=0;t.gH=0;t.lD=t.lS=t.lR=0;t.cl=false}
+  for(const t of G.towers){t.aD=t.aS=t.aR=0;t.gD=t.gS=t.gR=0;t.gH=0;t.lD=t.lS=t.lR=0;t.cl=false;t.rvD=0}
   const LID=G.lo[0],LD=LID&&DEF[LID];   // Leader passive: teammates that share Tags with the Leader get stronger (and so does the Leader)
   if(LD)for(const t of G.towers){
     if(t.def.id===LID){let n=0;for(let q=1;q<G.lo.length;q++){const u=DEF[G.lo[q]];if(u&&u.tags.some(x=>LD.tags.includes(x)))n++}t.lD=t.lR=t.lS=.05*n}   // +5% per teammate that shares a Tag (multiple shared Tags don't stack)
@@ -1853,7 +1908,8 @@ function step(dt){
       if((d.aura.dmg||0)*k>t.aD)t.aDn=d.n;t.aD=Math.max(t.aD,(d.aura.dmg||0)*k);t.aS=Math.max(t.aS,(d.aura.spa||0)*k);t.aR=Math.max(t.aR,(d.aura.rng||0)*k);
     }
     if(d.cleanse)for(const t of G.towers){if(!t.down&&dist(s.x,s.y,t.x,t.y)<=s.rg)t.cl=true}
-    if(d.rbdAlly){const v=Math.min(.3,d.rbdAlly*(100-100*s.hp/s.maxhp));if(v>0)for(const t of G.towers){if(t===s||t.down||dist(s.x,s.y,t.x,t.y)>s.rg)continue;t.aS=Math.max(t.aS,v)}}
+    if(d.rival)for(const t of G.towers){if(t===s||t.down||!d.rival.ids.includes(t.def.id)||dist(s.x,s.y,t.x,t.y)>s.rg)continue;t.rvD=Math.max(t.rvD,d.rival.dmg);s.rvD=Math.max(s.rvD,d.rival.dmg)}   // Saiyan Rivalry: both units gain DMG
+    if(d.rbdAlly){const v=Math.min(.3,d.rbdAlly*baseMiss());if(v>0)for(const t of G.towers){if(t===s||t.down||dist(s.x,s.y,t.x,t.y)>s.rg)continue;t.aS=Math.max(t.aS,v)}}
     for(const b of s.mod.tb)for(const t of G.towers){
       if(t===s||t.down)continue;
       if(b.all||t.def.tags.includes(b.tag)){if((b.dmg||0)>t.gD)t.gDn=s.def.n;t.gD=Math.max(t.gD,b.dmg||0);t.gS=Math.max(t.gS,b.spa||0);t.gR=Math.max(t.gR,b.rng||0);t.gH=Math.max(t.gH,b.hp||0)}
@@ -1902,6 +1958,7 @@ function step(dt){
   for(const t of G.towers){
     if(t.down)continue;
     const d=t.def;
+    if(lhOf(t)){t.stunT=0;t.debDt=0;t.debSt=0;t.silT=0}   // Lion Heart: no status effects on the protected ally
     calc(t);
     CURU=d.id;{const nm=Math.round((t.hp0||t.maxhp)*(1+t.gH));if(nm!==t.maxhp){t.hp=Math.min(nm,t.hp+Math.max(0,nm-t.maxhp));t.maxhp=nm}}if(t.buff.t>0)t.buff.t-=dt;
     if(t.form.t>0)t.form.t-=dt;
@@ -1951,6 +2008,7 @@ function step(dt){
   for(const f of G.fx)f.t-=dt;G.fx=vfxArr(G.fx.filter(f=>f.t>0));
   for(const x of G.texts){x.t-=dt;x.y-=26*dt}G.texts=G.texts.filter(x=>x.t>0);
   if(G.base<=0){G.base=0;finish(false);return}
+  if(G.auto&&canSkip()){if(G.skipT<0)G.skipT=AUTOSKIP_T;G.skipT-=dt;if(G.skipT<=0){G.skipT=-1;startWave(true)}}else G.skipT=-1;   // Auto Skip
   if(G.waveActive&&!G.queue.length&&!G.enemies.length)endWave();
 }
 
@@ -2096,14 +2154,14 @@ function updateAbil(){
     o.txt.textContent=o.t.down?'Down':rdy?'READY':Math.ceil(cd)+'s';
   }
 }
-function sideActs(d,lvl){return d.a.map(a=>{const ok=lvl===undefined||lvl>=(a.u||1);return `<p class="act ${ok?'':'lock'}"><b>${ok?'':'🔒 '}${a.n}</b> (${a.cd}s) ${ok?'':'· unlocks at Lv '+(a.u||1)}<br>${a.d}</p>`}).join('')}
+function sideActs(d,lvl,live){return d.a.map((a,i)=>{const ok=lvl===undefined||lvl>=(a.u||1);return `<p class="act ${ok?'':'lock'}"><b>${ok?'':'🔒 '}${a.n}</b> (${a.cd}s) ${ok?'':'· unlocks at Lv '+(a.u||1)}<br>${a.d}${live&&ok?`<br><button class="btn sd-ab" data-ab="${i}" style="margin-top:4px"></button>${a.t==='lionheart'?' <button class="atog" id="sd-lhoff">Off</button>':''}`:''}</p>`}).join('')}
 function buildSide(){
   const el=$('#side'),t=G.sel;
   if(!t){
     const p=G.placing!==null?DEF[SAVE.loadout[G.placing]]:null;
     el.innerHTML=p?`<h3>Placing ${p.n}</h3><p class="mut">${p.role.toUpperCase()} · ${p.r}</p><p class="pas">${p.p||'No passive.'}</p>${sideActs(p)}<p class="mut">Click an open spot on the map. Press Esc to cancel.</p>`
       :`<h3>${G.map.name}</h3><p class="mut">Pick a unit from the bar below (or press 1–6) and click the map. Click a placed unit to upgrade it.</p>
-      <p>Enemies that reach the 🏯 hurt your base. Tanks and bosses smash nearby units.</p><p class="mut">Space = skip the wait for the next wave. Waves also start on their own after ${INTERMISSION}s.</p>`;
+      <p>Enemies that reach the 🏯 hurt your base. Tanks and bosses smash nearby units.</p><p class="mut">Space = skip the wait for the next wave. Waves also start on their own after ${INTERMISSION}s. <b>Auto Skip</b> starts the next wave a few seconds after the last enemy spawns.</p>`;
     return;
   }
   const d=t.def;
@@ -2113,7 +2171,7 @@ function buildSide(){
    <div class="chain">${tagChips(d)}</div>
    <p class="pas">${d.p||'No passive.'}</p><p class="mut" style="font-size:12px">${aoeTxt(d)}</p>
    ${(SAVE.sys[d.id]||[]).length?`<div class="chain">${pathChips(d.id)}</div>`:''}
-   ${sideActs(d,t.lvl)}
+   ${sideActs(d,t.lvl,true)}
    ${d.a.length?'<div class="row"><button class="btn" id="sd-auto"></button></div>':''}
    <div class="row"><button class="btn" id="sd-aup"></button><button class="btn" id="sd-pri" style="flex:none" title="Upgrade priority: 1 is upgraded first when several units can be upgraded"></button></div>
    <div class="row"><button class="btn" id="sd-mode"></button><button class="btn" id="sd-vfx" style="flex:none"></button></div>
@@ -2125,6 +2183,8 @@ function buildSide(){
   $('#sd-pri').onclick=()=>cyclePri(t.def.id);
   $('#sd-up').onclick=()=>upgrade(t);
   $('#sd-sell').onclick=()=>sell(t);
+  $$('#side .sd-ab').forEach(b=>{b.onclick=()=>{if(!canAct())return;useActive(t,+b.dataset.ab)}});   // this unit's own abilities
+  {const lo=$('#sd-lhoff');if(lo)lo.onclick=()=>{t.prot=null;G.lhSel=null}}
   updateSide();
 }
 function updateSide(){
@@ -2145,6 +2205,9 @@ function updateSide(){
   const pri=$('#sd-pri');if(pri)pri.textContent='Priority '+((SAVE.upPri&&SAVE.upPri[t.def.id])||3);
   const up=$('#sd-up');up.textContent=t.lvl>=5?'MAX LEVEL':'Upgrade · '+fmt(upCost(t))+'¥';up.disabled=t.lvl>=5||G.yen<upCost(t);
   $('#sd-sell').textContent='Sell · '+fmt(t.spent*.7)+'¥';
+  t.def.a.forEach((a,i)=>{const b=$('#side [data-ab="'+i+'"]');if(!b)return;
+    if(a.t==='lionheart'){b.textContent=t.prot?'🦁 Protecting '+t.prot.def.n+' · change':(G.lhSel===t?'🦁 Choose an ally…':'🦁 Choose an ally');b.classList.toggle('on',!!t.prot);b.disabled=t.down;return}
+    const cd=t.cds[i],rdy=cd<=0&&!t.down;b.textContent=(rdy?'⚡ Use ':'⏳ ')+a.n+(rdy?'':' · '+(t.down?'Down':Math.ceil(cd)+'s'));b.disabled=!rdy;b.classList.toggle('on',rdy)})
 }
 function updateHUD(){
   if(!G)return;
@@ -2156,6 +2219,12 @@ function updateHUD(){
   b.textContent=G.waveActive?'Wave in progress':(G.wave>0&&G.nextT>0?`Skip wait · wave ${G.wave+1} in ${Math.ceil(G.nextT)}s`:`Start wave ${G.wave+1}`);
   if(G.abilDirty)buildAbil();
   updateAbil();updateSide();updateHotbar();
+  {const sb=$('#skipbox');
+   if(!canSkip()){sb.hidden=true;sb.dataset.k=''}
+   else{const k=G.auto?'a':'m';
+     if(sb.dataset.k!==k){sb.dataset.k=k;sb.innerHTML=G.auto?'<span id="sk-t"></span><button class="btn" id="sk-go">Now</button>':'<span>Skip Wave?</span><button class="primary" id="sk-go">Skip</button>';$('#sk-go').onclick=()=>startWave(true)}
+     if(G.auto)$('#sk-t').textContent='⏩ Wave in '+Math.ceil(Math.max(0,G.skipT<0?AUTOSKIP_T:G.skipT))+'s';
+     sb.hidden=false}}
   if(G.mgrOpen){if(G.mgrDirty)buildMgr();updateMgr()}
 }
 
@@ -2172,10 +2241,10 @@ cv.addEventListener('click',e=>{
   if(G.placing!==null){place(G.placing,p[0],p[1]);return}
   if(G.sel){G.sel=null;buildSide()}
 });
-$('#b-start').onclick=startWave;
+$('#b-start').onclick=()=>startWave();
 $('#b-auto').onclick=e=>{G.auto=!G.auto;e.currentTarget.classList.toggle('on',G.auto);
   if(G.auto&&!G.over){if(!G.waveActive&&G.wave===0)startWave();else if(!G.waveActive&&G.nextT>1.5)G.nextT=1.5}};
-$('#b-speed').onclick=e=>{G.speed=G.speed%3+1;e.currentTarget.textContent=G.speed+'×'};
+$('#b-speed').onclick=e=>{G.speed=G.speed%3+1;e.currentTarget.textContent=G.speed+'×';SAVE.speed=G.speed;save()};
 $('#b-pause').onclick=()=>setPause(!G.paused);
 $('#p-res').onclick=()=>setPause(false);
 $('#p-quit').onclick=()=>{askConfirm('Quit this run? You will not get rewards.',leaveGame)};
