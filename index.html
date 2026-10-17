@@ -607,7 +607,7 @@ const MAPS=[
 /* ---------- System tree: ONE path per unit, rolled with 🔮 System Crystals ----------
    Each roll moves the unit one step down the tree. Where the tree forks, the roll picks a branch at random. */
 MAPS.forEach(m=>{m.drops=m.drops.filter(d=>d.id!=='crystal')});   // System Crystals now come from raid shops
-MAPS.find(m=>m.id==='dungeon').drops.push({unit:'sjw',p:.1});
+MAPS.find(m=>m.id==='dungeon').drops.push({unit:'sjw',p:.2});
 const INF=MAPS.find(m=>m.id==='infinity');
 [{id:'special',name:'Special Dungeon Raid',desc:'A red gate. Something worthy of Arise waits inside.',waves:30,hp:3.0,gems:900,bossName:'Blood Commander',need:'q2',drops:[{unit:'igris',p:.33,pity:3},{id:'tok_special',p:1,min:5,max:8}]},
  {id:'island',name:'Island Raid',desc:'Ants swarm the island. Their king is near.',waves:30,hp:3.5,gems:1100,bossName:'Ant King',need:'q3',drops:[{unit:'beru',p:.33,pity:3},{id:'tok_island',p:1,min:5,max:8}]},
