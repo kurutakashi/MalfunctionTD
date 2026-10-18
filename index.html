@@ -114,6 +114,10 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
 .logdot{position:absolute;top:-5px;right:-5px;width:13px;height:13px;border-radius:50%;background:var(--acc);border:2px solid var(--line)}
 .logv{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .logv .new{background:var(--gold);color:#1a1633;border:2px solid var(--line);border-radius:6px;padding:0 8px;font-size:12px;font-weight:700}
+.logtabs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+.logtab{padding:4px 12px;font-size:14px}
+.logtab.on{background:var(--gold);color:#1a1633}
+.logtab .new{margin-left:6px;background:#e0493f;color:#fff;border-radius:6px;padding:0 5px;font-size:10px;font-weight:700;vertical-align:middle}
 .logsec h4{margin:14px 0 4px;font-size:15px}
 .logsec ul{margin:0;padding-left:20px}
 .logsec li{margin:3px 0}
@@ -332,9 +336,12 @@ const UNITS=[];
    then nudged: faster for light fast hitters, slower for crit / DOT / multi-hit / support / farm units. */
 /* ATTACK SPEED RULE: seconds-per-attack comes from raw damage, never from the unit line itself (the 8th number in each U(...) is ignored).
    100 dmg = 2s, rising smoothly to 12s at 7,500 dmg, so weak hitters swing often and heavy hitters rarely. Give a unit {spa:1.2} in its
-   trait object to override it (reserved for the future "fastest units", e.g. Minato). */
+   trait object to override it. Melee units (see isMelee) then attack 15% faster (MELEE_SPA). (reserved for the future "fastest units", e.g. Minato). */
+const SINGLE=['sjw','sjw2','sjw3','sjw4','sjw5','ichi','ichi2','goku','yuji','yuji2','kakashi','gon','meg','koby','gobta','chad','uryu','chaein','nobara','subaru','subaru2','igris','beru'];   // melee units (hit one enemy)
+const MELEE_SPA=.85;   // melee units (SINGLE list + pierce units like Zoro) attack 15% faster than their raw damage would give them
+const isMelee=d=>SINGLE.includes(d.id)||!!d.pierce;
 function spaFor(dmg){return Math.round(Math.min(12,Math.max(2,2+10*Math.log(dmg/100)/Math.log(75)))*20)/20}
-function U(r,id,n,ref,ic,role,dmg,spa,rng,x){const sp=(x&&x.spa)||spaFor(dmg);UNITS.push(Object.assign({r,id,n,ref,ic,role,dmg,dps:dmg/sp,spa:sp,rng,a:[],p:''},x||{}))}
+function U(r,id,n,ref,ic,role,dmg,spa,rng,x){const sp0=(x&&x.spa)||spaFor(dmg),sp=isMelee({id,pierce:x&&x.pierce})?Math.round(sp0*MELEE_SPA*20)/20:sp0;UNITS.push(Object.assign({r,id,n,ref,ic,role,dmg,dps:dmg/sp,spa:sp,rng,a:[],p:''},x||{}))}
 
 /* ---------- RARE ---------- */
 U('Rare','sjw','E-Rank Hunter','SJW','🗡️','dps',150,0.6,120,{noBanner:true,maxPlace:3,grow:{kill:.02, cap:3},p:'Grinder: +2% DMG per kill (Max 300%).'});
@@ -383,7 +390,7 @@ U('Legendary','veldora','Rain Dragon','Veldora','🐉','support',300,1.5,145,{au
 U('Legendary','beni','Oni King','Benimaru','🔥','dps',850,1.95,130,{dot:'burn',p:'Black Flame: hits Burn (50% DMG over 3s). Needs a name to unlock its full power.',a:[{n:'Flame Burst',d:'5× DMG to every enemy within 1.2× range.',cd:40,u:4,t:'nova',m:5,rm:1.2}]});
 U('Legendary','gobchief2','Goblin Chief (Named)','Rigurd','👑','support',400,1.55,145,{evo:true,aura:{spa:.2,dmg:.15,rng:.1},p:'Support: allies in range attack 20% faster, deal +15% DMG and get +10% range.'});
 U('Legendary','wolf2','Storm Dog (Named)','Ranga','🐺','dps',800,1.35,125,{evo:true,fastDmg:1.5,auraSlow:.15,p:'Hunter: +50% DMG to fast enemies. Storm Pack: enemies in range are 15% slower.'});
-U('Legendary','yojin2','Ahjin CEO','Yoo Jinho, evolved','💼','farm',450,1.7,125,{evo:true,maxPlace:1,income:450,p:'Corporate Takeover: +450¥ at the end of every wave (grows with level). Limited to 1 placement.',a:[{n:'Quarterly Bonus',d:'Instantly gain 1,200¥.',cd:60,u:4,t:'cash',amt:1200}]});
+U('Legendary','yojin2','Ahjin CEO','Yoo Jinho, evolved','💼','farm',450,1.7,125,{evo:true,maxPlace:1,income:500,p:'Corporate Takeover: +500¥ at the end of every wave (grows with level). Limited to 1 placement.',a:[{n:'Quarterly Bonus',d:'Instantly gain 1,200¥.',cd:60,u:4,t:'cash',amt:1200}]});
 U('Legendary','sjw2','C-Rank Hunter','SJW evolved','🗡️','dps',900,1.7,125,{evo:true,maxPlace:1,grow:{kill:.02,cap:3},dot:'bleed',p:'Bleed: hits cause Bleed (60% DMG over 6s).'});
 
 /* ---------- MYTHIC ---------- */
@@ -392,7 +399,7 @@ U('Mythic','yuji2','Crit Merchant','Yuji','💰','dps',2000,2.95,125,{evo:true,c
 U('Mythic','chaein','Chaein','Cha Hae-in','🗡️','dps',2200,3.05,130,{crit:[.4,3],critBoss:1,p:'Monarch Eye: 40% crit for 3× DMG, +100% crit DMG on bosses.',a:[{n:'Dagger Storm',d:'10 strikes of 2× DMG on random enemies.',cd:45,u:4,t:'random',hits:10,m:2}]});
 U('Mythic','frieza','Refrigerator','Frieza','🧊','dps',2200,2.45,140,{vuln:.25,p:'Tyrant: enemies in range take +25% DMG from all sources.',a:[{n:'Death Ball',d:'12× DMG to the strongest enemy on the map.',cd:55,u:5,t:'beam',m:12}]});
 U('Mythic','beni2','Oni King (Named)','Benimaru, named','🔥','dps',2400,3.05,135,{evo:true,dot:'burn',p:'Black Flame: hits Burn (50% DMG over 3s).',a:[{n:'Hell Flare',d:'Ignite every enemy on the map with a double-strength Burn.',cd:50,u:4,t:'burn',pct:.8,dur:10}]});
-U('Mythic','gojo','Six-Eyes Teacher','Gojo','🕶️','dps',2800,2.7,150,{auraSlow:.55,p:'Infinity: enemies in range are slowed by 55%, the biggest slow in the game (but never a full stop).',a:[{n:'Limitless Void',d:'Stun every enemy on the map for 3s.',cd:40,u:4,t:'map',stun:3},{n:'Hollow Purple',d:'8× DMG to every enemy on the map.',cd:70,u:5,t:'map',m:8}]});
+U('Mythic','gojo','Six-Eyes Teacher','Gojo','🕶️','dps',2800,2.7,150,{auraSlow:.55,p:'Infinity: enemies in range are slowed by 55%',a:[{n:'Limitless Void',d:'Stun every enemy on the map for 3s.',cd:40,u:4,t:'map',stun:3},{n:'Hollow Purple',d:'8× DMG to every enemy on the map.',cd:70,u:5,t:'map',m:8}]});
 U('Mythic','meg2','Shadow Summoner','Megumi, evolved','🌑','dps',2300,2.5,140,{evo:true,grow:{lvl:.12},p:'Ten Shadows: +12% DMG per upgrade level. Every upgrade awakens a new shikigami.',a:[
   {n:'Divine Dogs',d:'Two Divine Dogs fight beside you for 20s.',cd:35,u:2,t:'summon',ic:'🐕',cnt:2,m:.6,sp:.5,dur:20},
   {n:'Nue',d:'Nue strikes from the sky with 1.6× reach for 15s.',cd:45,u:3,t:'summon',ic:'🦉',cnt:1,m:1.2,sp:1.0,dur:15,rm:1.6},
@@ -410,7 +417,7 @@ U('Secret','shanks','One-armed Pirate','Shanks','🏴‍☠️','dps',5000,3.5,1
 U('Secret','sjw4','S-Rank Hunter','SJW evolved','🌑','dps',4800,3.6,140,{evo:true,maxPlace:1,dot:'poison',arise:true,p:'Arise: defeated enemies have a 1/3 chance to become shadow soldiers.'});
 
 /* ---------- MALFUNCTION ---------- */
-U('Malfunction','sjw5','Shadow Monarch','SJW, Final Form','👑','dps',7500,4.2,160,{evo:true,maxPlace:1,arise:true,monarch:true,p:'Shadow Legion: kills may rise as shadow soldiers. Monarch\'s Subjects: brings Igris and Beru with him. His shadows always tag along: every attack is followed up by Igris and Beru for 50% of their unit damage, or by the standard follow-up if they are on your team (that costs 5% DMG each, and they cannot be placed on the map). Igris adds Bleed and Beru adds Poison.',a:[{n:'Army of Shadows',d:'Summon 5 shadow soldiers for 20s.',cd:45,u:3,t:'summon',ic:'👤',cnt:5,m:.5,sp:.5,dur:20}]});
+U('Malfunction','sjw5','Shadow Monarch','SJW, Final Form','👑','dps',7500,4.2,160,{evo:true,maxPlace:1,arise:true,monarch:true,p:'Shadow Legion: kills may rise as shadow soldiers. Monarch\'s Subjects: Igris and Beru always tag along, following up attacks for 50% of their unit damage, or by 100% if they are on your team (that costs 5% DMG each, and they cannot be placed on the map). Igris adds Bleed and Beru adds Poison.',a:[{n:'Army of Shadows',d:'Summon 5 shadow soldiers for 20s.',cd:45,u:3,t:'summon',ic:'👤',cnt:5,m:.5,sp:.5,dur:20}]});
 /* ---------- Tags: anime · story status · powers. Units can have several. ---------- */
 
 const TAGS={
@@ -423,7 +430,7 @@ const TAGS={
  beru:['Solo Leveling','Shadow','Insect','Commander'],
  ichi:['Bleach','Main Character','Swordsman','Soul Reaper'],
  gumman:['One Piece','Main Character','Captain','Pirate','Devil Fruit','Martial Artist'],
- nami:['One Piece','Pirate','Strategist'],
+ nami:['One Piece','Pirate','Strategist','Farmer'],
  meg:['Jujutsu Kaisen','Main Cast','Sorcerer','Summoner'],
  goku:['Dragon Ball','Main Character','Saiyan','Martial Artist'],
  gobta:['Tensura','Goblin','Sidekick'],
@@ -444,10 +451,10 @@ const TAGS={
  pic:['Dragon Ball','Namekian','Martial Artist','Mentor'],
  wolf:['Tensura','Beast','Companion'],
  orihime:['Bleach','Healer','Support'],
- puri:['Meme','Prisoner'],
+ puri:['One-Punch Man','Prisoner'],
  nobara:['Jujutsu Kaisen','Main Cast','Sorcerer'],
  subaru:['Re:Zero','Main Character','Time Looper'],
- yojin:['Misc','Farmer'],
+ yojin:['Solo Leveling','Businessman','Farmer'],
  yojin2:['Solo Leveling','Businessman','Farmer'],
  uryu:['Bleach','Rival','Quincy','Archer'],
  ace:['One Piece','Pirate','Devil Fruit','Fire User'],
@@ -499,7 +506,6 @@ COST.yojin=COST.yojin2=400;   // Yoo Jinho costs the whole starter money
 const costOf=d=>Math.round((COST[d.id]||RAR[d.r].cost)*(1-(d.cheap||0)));
 /* ---------- Attack area: melee units hit one enemy, explosive units splash nearby enemies, a few hit everything in range ---------- */
 const AOE_FALL=.75;   // splash targets take 75% damage
-const SINGLE=['sjw','sjw2','sjw3','sjw4','sjw5','ichi','ichi2','goku','yuji','yuji2','kakashi','gon','meg','koby','gobta','chad','uryu','chaein','nobara','subaru','subaru2','igris','beru'];
 const ALLR=['rimuru','shanks','gojo'];
 function aoeOf(d){
   if(d._aoe)return d._aoe;
@@ -511,7 +517,7 @@ function aoeOf(d){
   else{const t={Rare:[0,1],Epic:[26,2],Legendary:[34,3],Mythic:[44,5],Secret:[60,8]}[d.r]||[0,1];a={r:t[0],n:t[1]}}
   return d._aoe=a;
 }
-const aoeTxt=d=>{const a=aoeOf(d);return d.role==='farm'?'Does not attack.':a.all?'Hits every enemy in range at once.':a.n>1?`Splash: hits up to ${a.n} enemies within ${a.r}px of its target (${Math.round(AOE_FALL*100)}% DMG on the extras).`:'Melee: hits a single enemy.'};
+const aoeTxt=d=>{const a=aoeOf(d);return d.role==='farm'?'Does not attack.':a.all?'Hits every enemy in range at once.':a.n>1?`Splash: hits up to ${a.n} enemies within ${a.r}px of its target (${Math.round(AOE_FALL*100)}% DMG on the extras).`+(isMelee(d)?' Melee: attacks 15% faster.':''):'Melee: hits a single enemy and attacks 15% faster.'};
 
 /* ---------- Items & evolutions ---------- */
 const ITEMS={
@@ -552,7 +558,12 @@ function famOf(id){while(EVO_FROM[id]&&EVO[EVO_FROM[id]].length===1)id=EVO_FROM[
 function clash(team,id){return team.some(x=>x!==id&&(famOf(x)===famOf(id)||(FUSE[x]||[]).includes(id)||(FUSE[id]||[]).includes(x)))}
 const THEME={dmg:.10,spa:.05};   // buff for a Theme Team (slots 1-5 share a Tag)
 function themeOf(L){const f=L.slice(0,5);if(f.length<5||f.some(id=>!DEF[id]))return null;return DEF[f[0]].tags.find(t=>f.every(id=>DEF[id].tags.includes(t)))||null}
-const themeLine=()=>{const th=themeOf(SAVE.loadout);return th?`<br><b style="color:var(--good)">🎯 Theme team: ${th}</b> (+10% DMG, -5% cooldown for everyone)`:'<br>Theme team: put 5 units that share a Tag in slots 1-5 for a team-wide buff.'};
+const VERSE={dmg:.15,spa:.10};   // buff for a Verse Team (slots 1-5 share an anime-universe Tag): a bigger Theme Team
+const VERSES=['Solo Leveling','Bleach','One Piece','Jujutsu Kaisen','Dragon Ball','Tensura','Hunter x Hunter','Naruto','Black Clover','Re:Zero','One-Punch Man'];   // the anime-universe Tags (every unit lists its anime first)
+const verseOfUnit=u=>VERSES.find(v=>u.tags.includes(v))||null;
+function verseOf(L){const f=L.slice(0,5);if(f.length<5||f.some(id=>!DEF[id]))return null;return VERSES.find(v=>f.every(id=>DEF[id].tags.includes(v)))||null}
+function buffOf(L){const v=verseOf(L);if(v)return{kind:'verse',tag:v,dmg:VERSE.dmg,spa:VERSE.spa};const t=themeOf(L);return t?{kind:'theme',tag:t,dmg:THEME.dmg,spa:THEME.spa}:null}   // Verse beats Theme; they never stack
+const themeLine=()=>{const tb=buffOf(SAVE.loadout);return tb?`<br><b style="color:var(--good)">${tb.kind==='verse'?'🌐 Verse team':'🎯 Theme team'}: ${tb.tag}</b> (+${Math.round(tb.dmg*100)}% DMG, -${Math.round(tb.spa*100)}% cooldown for everyone)`:'<br>Theme team: put 5 units that share a Tag in slots 1-5 for a team-wide buff. Verse team: 5 units from the same anime give a bigger one (+15% DMG, -10% cooldown).'};
 /* ---------- Enemies ---------- */
 const EN={
   grunt: {hp:1,  sp:55, r:11,rew:1,  leak:1, ic:'👻',col:'#8bd17c'},
@@ -1217,7 +1228,44 @@ function teamScore(team,L){
   {const v=team.find(u=>u.id==='veg'),g=team.find(u=>u.id==='goku2')||team.find(u=>u.id==='goku');if(v&&g)s+=.3*(effDps(v,L,team)+effDps(g,L,team))}   // Saiyan Rivalry
   return s;
 }
-function autoEquip(leaderId){
+function autoEquip(leaderId,mode){   // mode: 'best' (default), 'theme' or 'verse'. Tagged modes return {err} or {kind,tag,full,shared}
+  if(mode==='theme'||mode==='verse')return autoEquipTagged(leaderId,mode);
+  autoEquipBest(leaderId);
+}
+function autoEquipTagged(leaderId,mode){
+  const own=UNITS.filter(u=>SAVE.inv[u.id]);
+  if(!own.length)return{err:'You have no units yet'};
+  const lead=own.find(u=>u.id===leaderId);
+  if(!lead)return{err:'Put a Leader in slot 1 first'};
+  const verse=mode==='verse',tags=verse?[verseOfUnit(lead)].filter(Boolean):lead.tags;
+  if(!tags.length)return{err:lead.n+(verse?' has no anime Verse tag':' has no Tags')};
+  const fill=(team,pool,size)=>{   // greedy: add whoever raises the team's strength the most
+    pool=pool.slice();
+    while(team.length<size&&pool.length){
+      const base=teamScore(team,lead);let best=null,bs=-1e18;
+      for(const u of pool){if(clash(team.map(x=>x.id),u.id))continue;const sc=teamScore(team.concat(u),lead)-base;if(isBound(u,team.concat(u))&&sc<0)continue;if(sc>bs){bs=sc;best=u}}
+      if(!best)break;team.push(best);pool.splice(pool.indexOf(best),1);
+    }
+    return team;
+  };
+  // 1) for each Tag the Leader has, build the strongest team of units that share it; keep the Tag that scores best with its buff
+  let pick=null;
+  for(const T of tags){
+    const five=fill([lead],own.filter(u=>u!==lead&&u.tags.includes(T)),5),B=VERSES.includes(T)?VERSE:THEME,sc=teamScore(five,lead)*(five.length===5?1+B.dmg+B.spa*1.1:1);   // a shared anime Tag earns the bigger Verse buff
+    if(!pick||sc>pick.sc)pick={T,five,sc};
+  }
+  let team=pick.five.slice();const full=team.length===5,shared=team.length;
+  // 2) the last slot is reserved for a farm unit, unless a farm unit's Tag already helps make the team (then it sits in slots 1-5)
+  const farm=team.some(u=>u.role==='farm')?null:own.filter(u=>!team.includes(u)&&u.role==='farm'&&!clash(team.map(x=>x.id),u.id)).sort((a,b)=>effDps(b)-effDps(a))[0]||null;
+  if(!full)team=fill(team,own.filter(u=>!team.includes(u)&&u!==farm),farm?5:6);   // too few units share the Tag: top up with the strongest others
+  if(farm&&team.length<6)team.push(farm);
+  else if(team.length<6)team=fill(team,own.filter(u=>!team.includes(u)),6);
+  const rest=team.slice(1),cost=(a,b)=>costOf(a)-costOf(b);
+  const order=full?[lead].concat(rest.slice(0,4).sort(cost),rest.slice(4)):[lead].concat(rest.filter(u=>u!==farm).sort(cost),rest.filter(u=>u===farm));
+  SAVE.loadout=order.map(u=>u.id);
+  return{kind:mode,tag:pick.T,full,shared};
+}
+function autoEquipBest(leaderId){
   const own=UNITS.filter(u=>SAVE.inv[u.id]);
   if(!own.length){SAVE.loadout=[];return}
   const R=u=>RN.indexOf(u.r);
@@ -1247,9 +1295,9 @@ function autoEquip(leaderId){
   }
   const rest=team.filter(u=>u!==lead&&u!==farm).sort((a,b)=>costOf(a)-costOf(b));
   let order=[lead].concat(rest);
-  if(farm){   // the farm takes the last slot, unless sitting in slots 1-5 completes a theme team
+  if(farm){   // the farm takes the last slot, unless sitting in slots 1-5 completes a theme or verse team
     order.push(farm);
-    if(order.length===6&&!themeOf(order.slice(0,5).map(u=>u.id)))for(const x of rest){const f5=[lead].concat(rest.filter(u=>u!==x),farm);if(themeOf(f5.map(u=>u.id))){order=f5.concat(x);break}}
+    if(order.length===6&&!buffOf(order.slice(0,5).map(u=>u.id)))for(const x of rest){const f5=[lead].concat(rest.filter(u=>u!==x),farm);if(buffOf(f5.map(u=>u.id))){order=f5.concat(x);break}}
   }
   SAVE.loadout=order.map(u=>u.id);   // Leader in slot 1, cheapest teammates next   // Leader in slot 1, cheapest teammates first
 }
@@ -1266,17 +1314,20 @@ function freePull(){
 
 /* ---------- Update Log (newest entry first: add a new object at the top for each update) ---------- */
 const UPDATE_LOG=[
- {v:'Update 0.5',rev:3,sub:'Raids, paths and quality of life',sections:[
+ {v:'Update 0.5',rev:7,sub:'Raids, paths and quality of life',sections:[
   {h:'✨ New this patch: quality of life',items:[
    'Your <b>game speed</b> (1× to 3×) is remembered and stays the same in every game.',
    '<b>Active abilities</b> can now be used straight from a selected unit\'s menu on the map. The buttons only control that unit.',
    '<b>Star Transfer</b>: move ★ from a pre-evolution to its evolved form (like Monkey Kid to Super Monkey) without evolving again. Costs 1 🔮 System Crystal per ★. Open either unit to find it.',
    '<b>Raid shops</b> now sell <b>🌟 Star Crystals</b> for 15 tokens each: use one on a unit to add a ★ with no duplicate.',
    'Evolution items in the raid shops come in the amount one evolution needs: 5 Soul Badges, 5 Shikigami Seals, 5 Witch Factors, 7 Dragon Balls, and 5 Cursed Fingers (enough for Yuji; Sukuna needs 10).',
+   '<b>Verse Teams</b>: if slots 1 to 5 all come from the same anime (the universe Tag, like Bleach or One Piece), the whole team gets <b>+15% DMG and -10% cooldown</b>. It replaces the Theme buff instead of stacking.',
+   '<b>Autofill Team</b> now asks what you want when a Leader is already in slot 1: <b>Best Team</b>, <b>Theme Team</b> (strongest units sharing a Tag with the Leader) or <b>Verse Team</b> (strongest units from the Leader\'s anime). The last slot stays a farm unit unless a farm unit\'s Tag helps the team.',
+   '<b>Phantom Placement</b> no longer blocks <b>Auto-Upgrade</b> while it waits for money. Units keep auto-upgrading, and a phantom is only placed ahead of upgrades the moment you can afford it.',
    'A <b>Next map ▶</b> button on the victory screen takes you straight to the next map you can play.',
    'Dupe ★ now give <b>dedicated farm units +30% income each</b> (up to +150% at 5★), including their Harvest ability.',
    '<b>Autofill Team</b> now counts every placement a unit can have, so a weaker unit with more placements can win a slot. It also scores <b>Area DPS</b>: how many enemies a unit hits or can hit.',
-   '<b>Auto Skip</b> (the old Auto button): once every enemy of a wave has spawned, a short timer starts the next wave without waiting for the rest to be cleared. With Auto Skip off, a <b>Skip Wave?</b> prompt appears at the top of the map instead.']},
+   '<b>Auto Skip</b> (the old Auto button): once every enemy of a wave has spawned, a short timer starts the next wave without waiting for the rest to be cleared (and a wave that takes over 30s to spawn gets the next one queued behind it). With Auto Skip off, a <b>Skip Wave?</b> prompt appears at the top of the map instead.']},
   {h:'🐞 New this patch: fixes',items:[
    '<b>Subaru</b> and <b>Subaru, evolved</b>: RBD now follows the missing HP of your <b>Tower</b> (🏯 base), not the unit\'s own HP.',
    '<b>Lion Heart</b> now makes the protected ally immune to status effects (stuns, curses, Time Warp, Silence) and splits damage: Subaru takes 75%, the ally takes 25%. It works until Subaru goes down.',
@@ -1288,54 +1339,36 @@ const UPDATE_LOG=[
    '<b>Autofill Team</b> puts the farm unit in the last slot unless it completes a theme team, and it accounts for units that are disabled (like Igris/Beru under the Shadow Monarch).',
    'The <b>Shops</b> tab has a side menu: pick a raid shop to see your tokens for that raid and everything you can buy.']},
   {h:'⚖️ Balance and content',items:[
+   '<b>Melee units</b> (single-target units, plus piercing melee like Zoro) now attack <b>15% faster</b>, so they keep up with splash and hit-all units.',
    '<b>Ahjin CEO</b> is limited to 1 placement and costs 850. <b>Potential Man</b> is now an Epic.',
    'Bloodline gives +5% DMG per Tag. Overdrive gives units with 3 or fewer Tags extra damage so they can keep up with highly tagged units.',
    'New farm-only advanced path: from <i>Pockets Drenched</i> to <i>Money Clone Jutsu</i>, it raises the money a farm earns (it works even when not Leader).',
    'System paths no longer buff allies by Tag. Follow-up DOTs use the follower\'s raw attack instead of its DPS.',
    'The Monarch Trial has more enemies and more bosses. All Raids are open from the start.']}]},
- {v:'Update 0',sub:'The first full build',sections:[
-  {h:'🎵 New: menu soundtracks and this log',items:[
-   'Every menu tab now has its own looping soundtrack: <b>Play</b>, <b>Summon + Quests</b>, <b>Units + Items</b> and <b>Shops</b>. Tabs that share a track keep it playing without a restart, and tracks fade in and out.',
-   'Music has its own 🎵 volume slider (also in the pause menu), separate from sound effects.',
-   'This <b>Update Log</b> button. A red dot appears when there is something new to read.']},
-  {h:'⚔️ Play: Story, Raids and Trials',items:[
-   '<b>Story</b> maps drop evolution items and units. <b>Raids</b> are much harder and pay raid tokens that you spend in the <b>Shops</b> tab on System Crystals and evolution items. <b>Trials</b> are special challenges, including the endless Infinity Castle.',
-   'Bosses fight back with stuns, curses, blasts and silences, so healers and supports matter. Regenerating enemies heal unless a DOT (Bleed, Poison or Burn) is on them.',
-   'Raw damage sets attack speed: heavy hitters swing slowly, light hitters swing fast.',
-   'The next wave starts by itself after a short break, so there is no stalling.']},
-  {h:'🎴 Units and summoning',items:[
-   '50+ units across Rare, Epic, Legendary, Mythic, Secret and the glitched <b>Malfunction</b> rarity.',
-   'Standard, Selection (a featured Mythic) and Star banners, a free 10-pull, <b>Max Summon</b>, and pity: a Mythic or better within 40 summons, a Secret within 200.',
-   'Every drop under 100% has pity too. The <b>Index</b> lists every unit, with locks on the ones you have not found yet.',
-   'Every unit has <b>Tags</b> (anime, story role, powers) that power the Leader bonus, Theme Teams and the Tier 3 System upgrades.']},
-  {h:'🧬 Evolutions and the System',items:[
-   'Evolving needs items, and for stronger units also <b>lifetime kills</b> or a quest. Tensura units evolve into their <b>(Named)</b> forms with Nametags from the Slime Raid.',
-   'The <b>System tree</b>: each unit walks one path, rolled with System Crystals. Tier 3 upgrades also buff allies that share a Tag.',
-   'Evolved units get a <b>4DV4NC3D P4TH</b> (you choose every step) and a free System step of your choice. Its bonuses only work while that unit is your Leader.']},
-  {h:'🛡️ Teams',items:[
-   '<b>Leader</b> (slot 1): teammates that share Tags with it get +10% DMG, range and −10% cooldown per shared Tag (stacks). The Leader gets +5% for each teammate that shares a Tag.',
-   '<b>Theme Teams</b>: five units that share a Tag in slots 1 to 5 get a team-wide buff.',
-   '<b>Autofill Team</b> builds a lineup around the best Leader. Drag units to swap slots, and keep up to 3 saved teams.']},
-  {h:'📜 Quests: "Shadow\'s Legacy"',items:[
-   'A five-step questline that takes E-Rank Hunter all the way to the Shadow Monarch, through the Double Dungeon, two raids, Igris, Beru, the Monarch Trial and the Cup of Rebirth.']},
-  {h:'🧰 Quality of life',items:[
-   '<b>F</b> opens the Unit Manager (with search), <b>P</b> pauses. Auto abilities, Auto-upgrade with priority, Sell All, Restart, 1x to 3x speed and a per-unit VFX toggle.',
-   'A * on a stat means auras, buffs or debuffs are changing it. Hover a stat to see where the bonus comes from.',
-   'The Items tab shows only what you have found. Tap an item to see what it is for.']},
-  {h:'🐛 Fixes',items:[
-   'Rain Dragon (Named) now has its Tags. Evolutions and quests work again after the unit-id rename.',
-   'Saves from older builds are upgraded automatically, and evolved units you owned before they became evolved forms now get their 4DV4NC3D P4TH.']}
+ {v:'Update 0',sub:'Release',sections:[
+  {h:'Content',items:[
+   '57 UNITS!',
+   '11 MAPS!',
+   '3 RAIDS',
+   '1 TRIAL',
+   '1 MALFUNCTIONED QUEST']}
  ]}
 ];
 const logKey=()=>UPDATE_LOG[0].v+(UPDATE_LOG[0].rev?'.r'+UPDATE_LOG[0].rev:'');
 function logDot(){const d=$('#l-logdot');if(d)d.hidden=(SAVE.logSeen===logKey())}
-function openLog(){
+function openLog(){   // pick an update from the list (newest first, oldest last)
   const m=$('#modal');m.hidden=false;
-  m.innerHTML='<div class="panel" style="max-width:640px"><h2 style="font-size:34px">Update Log</h2>'+UPDATE_LOG.map((u,i)=>
-    `<div class="logv"><h3 style="margin:10px 0 0;font-size:26px">${u.v}</h3><span class="mut">${u.sub||''}</span>${i===0?'<span class="new">LATEST</span>':''}</div>`+
-    u.sections.map(s=>`<div class="logsec"><h4>${s.h}</h4><ul>${s.items.map(t=>'<li>'+t+'</li>').join('')}</ul></div>`).join('')).join('<hr>')+
-    '<div class="row"><button class="btn" id="lg-x">Close</button></div></div>';
-  $('#lg-x').onclick=()=>m.hidden=true;
+  let sel=0;
+  const draw=()=>{const u=UPDATE_LOG[sel];
+    m.innerHTML='<div class="panel" style="max-width:640px"><h2 style="font-size:34px">Update Log</h2>'+
+      '<div class="logtabs">'+UPDATE_LOG.map((x,i)=>`<button class="btn logtab ${i===sel?'on':''}" data-lg="${i}">${x.v}${i===0?'<span class="new">NEW</span>':''}</button>`).join('')+'</div>'+
+      `<div class="logv"><h3 style="margin:10px 0 0;font-size:26px">${u.v}</h3><span class="mut">${u.sub||''}</span></div>`+
+      u.sections.map(x=>`<div class="logsec"><h4>${x.h}</h4><ul>${x.items.map(t=>'<li>'+t+'</li>').join('')}</ul></div>`).join('')+
+      '<div class="row"><button class="btn" id="lg-x">Close</button></div></div>';
+    $('#lg-x').onclick=()=>m.hidden=true;
+    $$('#modal [data-lg]').forEach(b=>{b.onclick=()=>{sel=+b.dataset.lg;draw()}});
+  };
+  draw();
   SAVE.logSeen=logKey();save();logDot();
 }
 function openHelp(){
@@ -1364,7 +1397,24 @@ $('#startnote').onclick=e=>{
   if(e.target.id==='note-go')gotoTab('summon');
   else if(e.target.id==='note-fill'){autoEquip();save();renderAll()}
 };
-$('#autofill').onclick=()=>{const L=SAVE.loadout[0];autoEquip(L);save();renderAll();toast(L?'Team built around '+DEF[SAVE.loadout[0]].n+' as Leader':'Team filled: Leader chosen for its 4DV4NC3D P4TH and Tags')};
+$('#autofill').onclick=()=>{const L=SAVE.loadout[0];if(L&&DEF[L]){openFillMenu(L);return}autoEquip(L);save();renderAll();toast('Team filled: Leader chosen for its 4DV4NC3D P4TH and Tags')};
+function openFillMenu(L){   // a Leader is already in slot 1: choose how to fill the rest
+  const m=$('#modal'),d=DEF[L],vt=verseOfUnit(d);m.hidden=false;
+  const opt=(k,h,t,dis)=>`<div class="evo" style="border-style:solid;margin:8px 0"><b>${h}</b><br><span class="mut">${t}</span><div class="row" style="margin-top:6px"><button class="primary" data-fill="${k}" ${dis?'disabled':''}>${h}</button></div></div>`;
+  m.innerHTML=`<div class="panel" style="max-width:480px"><h2 style="font-size:30px">Autofill Team</h2><p class="mut">Leader: <b>${d.ic} ${d.n}</b>. How should the other slots be filled?</p>`+
+    opt('best','Best Team','The strongest team overall around your Leader (keeps the last slot for a farm unit).')+
+    opt('theme','Theme Team','The strongest units that share a Tag with your Leader. Five sharing one Tag get +10% DMG and -5% cooldown. The last slot is a farm unit unless a farm unit\'s Tag helps the team.')+
+    opt('verse','Verse Team',vt?`The strongest units from the same anime as your Leader (${vt}). Five from one anime get +15% DMG and -10% cooldown. The last slot is a farm unit unless a farm unit is from that anime.`:d.n+' has no anime Verse tag.',!vt)+
+    '<div class="row"><button class="btn" id="fm-x">Cancel</button></div></div>';
+  $('#fm-x').onclick=()=>m.hidden=true;
+  $$('#modal [data-fill]').forEach(b=>{b.onclick=()=>{
+    const mode=b.dataset.fill,r=autoEquip(L,mode);m.hidden=true;
+    if(r&&r.err){toast(r.err);return}
+    save();renderAll();
+    if(!r)toast('Best team built around '+d.n+' as Leader');
+    else if(r.full){const tb=buffOf(SAVE.loadout);toast((tb.kind==='verse'?'Verse':'Theme')+' team: '+tb.tag+' (+'+Math.round(tb.dmg*100)+'% DMG, -'+Math.round(tb.spa*100)+'% cooldown)')}
+    else toast('Only '+r.shared+' unit'+(r.shared>1?'s':'')+' share '+r.tag+' with '+d.n+', so the rest are your best units (no team buff)')}});
+}
 $('#pullfree').onclick=freePull;
 $('#l-mute').onclick=toggleMute;
 $('#l-help').onclick=openHelp;
@@ -1455,10 +1505,10 @@ function startGame(mapId){
   const map=MAPS.find(m=>m.id===mapId);
   const deco=[];for(let i=0;i<70;i++)deco.push([Math.random()*900,Math.random()*540]);
   SAVE.auto={};SAVE.autoUp={};save();   // auto-abilities and auto-upgrade reset every run
-  G={theme:themeOf(SAVE.loadout),ghosts:[],reserve:0,lo:SAVE.loadout.slice(),bk:0,low:(mapId==='dungeon'&&!SAVE.quests.q1&&SAVE.loadout.length===1&&SAVE.loadout[0]==='sjw'),map,path:mkPath(map.pts),deco,wave:0,waveActive:false,queue:[],spawnT:0,gap:.8,enemies:[],towers:[],summons:[],fx:vfxArr([]),texts:[],
+  G={tb:buffOf(SAVE.loadout),theme:(buffOf(SAVE.loadout)||{}).tag||null,ghosts:[],reserve:0,lo:SAVE.loadout.slice(),bk:0,low:(mapId==='dungeon'&&!SAVE.quests.q1&&SAVE.loadout.length===1&&SAVE.loadout[0]==='sjw'),map,path:mkPath(map.pts),deco,wave:0,waveActive:false,queue:[],spawnT:0,gap:.8,enemies:[],towers:[],summons:[],fx:vfxArr([]),texts:[],
      yen:850,base:100,speed:(SAVE.speed>=1&&SAVE.speed<=3?SAVE.speed:1),skipT:-1,paused:false,auto:false,sel:null,placing:null,over:false,time:0,mx:-99,my:-99,kills:0,nextT:0,abilDirty:true,abtns:[],mgrOpen:false,mgrDirty:true,mgrRows:[],mgrAll:null,lhSel:null,mgrQuery:''};
   $('#lobby').hidden=true;$('#game').hidden=false;$('#over').hidden=true;$('#skipbox').hidden=true;$('#pausebox').hidden=true;$('#mgr').hidden=true;$('#side').hidden=false;$('#b-mgr').classList.remove('on');
-  $('#b-speed').textContent=G.speed+'×';musicPlay(map.trial?'trials':map.raid?'raids':'story');if(themeOf(SAVE.loadout))setTimeout(()=>toast('Theme team: '+themeOf(SAVE.loadout)+' (+10% DMG, -5% cooldown)'),300);$('#b-auto').classList.remove('on');$('#b-pause').textContent='Pause';
+  $('#b-speed').textContent=G.speed+'×';musicPlay(map.trial?'trials':map.raid?'raids':'story');{const tb=buffOf(SAVE.loadout);if(tb)setTimeout(()=>toast((tb.kind==='verse'?'Verse team: ':'Theme team: ')+tb.tag+' (+'+Math.round(tb.dmg*100)+'% DMG, -'+Math.round(tb.spa*100)+'% cooldown)'),300)}$('#b-auto').classList.remove('on');$('#b-pause').textContent='Pause';
   buildHotbar();buildSide();buildAbil();updateHUD();
   lastTs=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(frame);
 }
@@ -1477,11 +1527,12 @@ function buildWave(w,map){
   return q;
 }
 const AUTOSKIP_T=5;   // seconds between the last spawn of a wave and the next wave starting (Auto Skip)
+const AUTOSKIP_MAX=30;   // failsafe: with Auto Skip on, a wave still spawning after this many seconds gets the next wave queued behind it anyway
 function canSkip(){return !!G&&!G.over&&!G.paused&&G.waveActive&&!G.queue.length&&G.wave<G.map.waves&&G.enemies.some(e=>!e.dead)}
-function startWave(force){
+function startWave(force,spawning){
   if(!G||G.over||G.paused)return;
-  if(G.waveActive){if(force!==true||!canSkip())return;waveRewards()}   // skipping: the wave you leave behind still pays out
-  G.wave++;G.queue=buildWave(G.wave,G.map);G.waveActive=true;G.spawnT=.3;G.gap=Math.max(.28,.9-.02*G.wave);G.nextT=0;
+  if(G.waveActive){if(force!==true||!(canSkip()||(spawning===true&&G.queue.length&&G.wave<G.map.waves)))return;waveRewards()}   // skipping: the wave you leave behind still pays out
+  G.wave++;G.queue=(G.queue||[]).concat(buildWave(G.wave,G.map));G.waveT=0;G.waveActive=true;G.spawnT=.3;G.gap=Math.max(.28,.9-.02*G.wave);G.nextT=0;
   G.towers.forEach(t=>{if(t.down){t.down=false;t.hp=t.maxhp*.5}});
   const bw=G.queue.includes('boss');banner(bw?`WAVE ${G.wave} — BOSS!`:`WAVE ${G.wave}`);sfx(bw?'boss':'wave');
 }
@@ -1570,12 +1621,12 @@ function addGhost(i,x,y){
   if(!validPos(x,y)){deny("Can't place there");return}
   G.ghosts.push({id,x,y});G.placing=null;toast(d.n+' will be placed when you have '+costOf(d)+'¥. Click the phantom to cancel.');sfx('click');buildSide();updateHotbar();
 }
-function runGhosts(){   // oldest phantom first; its cost is reserved so auto-upgrade can't spend it
+function runGhosts(){   // oldest phantom first; it only takes priority over auto-upgrade once you can afford it (nothing is reserved while it waits)
   G.reserve=0;
   while(G.ghosts.length){
     const g=G.ghosts[0],d=DEF[g.id];
     if(G.towers.filter(t=>t.def.id===g.id).length>=maxOf(d)){G.ghosts.shift();continue}
-    if(G.yen<costOf(d)){G.reserve=costOf(d);return}
+    if(G.yen<costOf(d))return;
     G.ghosts.shift();
     const i=SAVE.loadout.indexOf(g.id);if(i>=0)place(i,g.x,g.y,true);
   }
@@ -1703,7 +1754,7 @@ function calc(t){
   if(d.dmgBuff)own*=1+d.dmgBuff;
   if(d.rbdDmg)own*=1+d.rbdDmg*baseMiss();
   // ... versus OUTSIDE effects (auras, tag buffs, ability buffs, transformations, boss debuffs), shown as the * multiplier
-  let out=1+t.aD+t.gD+t.lD+(t.rvD||0)+(G.theme?THEME.dmg:0);   // ally bonuses add together
+  let out=1+t.aD+t.gD+t.lD+(t.rvD||0)+(G.theme?G.tb.dmg:0);   // ally bonuses add together
   if(t.buff.t>0)out*=1+t.buff.dmg;
   if(t.form.t>0)out*=t.form.dmg;
   if(t.debDt>0)out*=1-t.debD;
@@ -1711,7 +1762,7 @@ function calc(t){
   let s=d.spa*Math.max(.25,1-S.spa-(S.ninja?Math.min(.05,.005*n):0));
   if(d.rbd)s*=1-d.rbd*baseMiss();
   if(d.zen)s*=1-Math.min(d.zen.cap,t.kills*d.zen.per);
-  let so=Math.max(.3,1-t.aS-t.gS-t.lS-(G.theme?THEME.spa:0));
+  let so=Math.max(.3,1-t.aS-t.gS-t.lS-(G.theme?G.tb.spa:0));
   if(t.form.t>0)so*=t.form.spa;
   if(t.shrine.t>0)so*=t.shrine.spa;
   if(t.debSt>0)so*=1+t.debS;
@@ -1729,7 +1780,7 @@ function srcOf(t,k){
     add(1+.1*stars(d.id),'Stars');add(LVLM[t.lvl-1],'Upgrade level');add(1+S.dmg,'System tree');add(1+S.tagDmg*d.tags.length,'4DV4NC3D P4TH (Tags)');add(d.tags.length<=3?1+S.lowTag*(5-d.tags.length):1,'4DV4NC3D P4TH (low-Tag bonus)');
     let g=1;if(d.grow){if(d.grow.kill)g*=1+Math.min(d.grow.cap,t.kills*d.grow.kill);if(d.grow.wave)g*=1+Math.min(d.grow.cap,t.waves*d.grow.wave);if(d.grow.lvl)g*=1+d.grow.lvl*(t.lvl-1)}
     add(g,d.n+' Passive');add(1+(d.dmgBuff||0),d.n+' Passive');if(d.rbdDmg)add(1+d.rbdDmg*baseMiss(),d.n+' Passive (missing Tower HP)');
-    add(1+t.aD+t.gD+t.lD+(t.rvD||0)+(G.theme?THEME.dmg:0),'Allies, additive'+(G.theme?' + '+G.theme+' theme':'')+' ('+(t.lD?'+'+t.lD.toFixed(2)+' Leader ':'')+(t.aD?'+'+t.aD.toFixed(2)+' '+(t.aDn||'aura'):'')+(t.gD?' +'+t.gD.toFixed(2)+' '+(t.gDn||'tag buff'):'')+(t.rvD?' +'+t.rvD.toFixed(2)+' Saiyan Rivalry':'')+' )');
+    add(1+t.aD+t.gD+t.lD+(t.rvD||0)+(G.theme?G.tb.dmg:0),'Allies, additive'+(G.theme?' + '+G.theme+' '+G.tb.kind:'')+' ('+(t.lD?'+'+t.lD.toFixed(2)+' Leader ':'')+(t.aD?'+'+t.aD.toFixed(2)+' '+(t.aDn||'aura'):'')+(t.gD?' +'+t.gD.toFixed(2)+' '+(t.gDn||'tag buff'):'')+(t.rvD?' +'+t.rvD.toFixed(2)+' Saiyan Rivalry':'')+' )');
     add(sjwPen(d),'Igris/Beru follow-up trade-off');if(t.buff.t>0)add(1+t.buff.dmg,'Active buff');if(t.form.t>0)add(t.form.dmg,'Transformation');if(t.debDt>0)add(1-t.debD,'Boss curse')}
   else if(k==='spa'){nm='Cooldown';base=d.spa+'s';tot=t.sp/d.spa;
     add(Math.max(.25,1-S.spa),'System tree');if(d.rbd)add(1-d.rbd*baseMiss(),d.n+' Passive (missing Tower HP)');if(d.zen)add(1-Math.min(d.zen.cap,t.kills*d.zen.per),d.n+' Passive');
@@ -1888,7 +1939,7 @@ function addText(x,y,s,col,t,big){if(G.texts.length<90)G.texts.push({x:x+(Math.r
 
 /* ---------- main step ---------- */
 function step(dt){
-  G.time+=dt;
+  G.time+=dt;if(G.waveActive)G.waveT=(G.waveT||0)+dt;
   if(!G.waveActive&&G.wave>0&&G.nextT>0){G.nextT-=dt;if(G.nextT<=0)startWave()}   // forced next wave
   if(G.waveActive&&G.queue.length){
     G.spawnT-=dt;
@@ -2009,6 +2060,7 @@ function step(dt){
   for(const x of G.texts){x.t-=dt;x.y-=26*dt}G.texts=G.texts.filter(x=>x.t>0);
   if(G.base<=0){G.base=0;finish(false);return}
   if(G.auto&&canSkip()){if(G.skipT<0)G.skipT=AUTOSKIP_T;G.skipT-=dt;if(G.skipT<=0){G.skipT=-1;startWave(true)}}else G.skipT=-1;   // Auto Skip
+  if(G.auto&&G.waveActive&&G.queue.length&&G.wave<G.map.waves&&G.waveT>=AUTOSKIP_MAX)startWave(true,true);   // failsafe for very long spawns
   if(G.waveActive&&!G.queue.length&&!G.enemies.length)endWave();
 }
 
@@ -2161,7 +2213,7 @@ function buildSide(){
     const p=G.placing!==null?DEF[SAVE.loadout[G.placing]]:null;
     el.innerHTML=p?`<h3>Placing ${p.n}</h3><p class="mut">${p.role.toUpperCase()} · ${p.r}</p><p class="pas">${p.p||'No passive.'}</p>${sideActs(p)}<p class="mut">Click an open spot on the map. Press Esc to cancel.</p>`
       :`<h3>${G.map.name}</h3><p class="mut">Pick a unit from the bar below (or press 1–6) and click the map. Click a placed unit to upgrade it.</p>
-      <p>Enemies that reach the 🏯 hurt your base. Tanks and bosses smash nearby units.</p><p class="mut">Space = skip the wait for the next wave. Waves also start on their own after ${INTERMISSION}s. <b>Auto Skip</b> starts the next wave a few seconds after the last enemy spawns.</p>`;
+      <p>Enemies that reach the 🏯 hurt your base. Tanks and bosses smash nearby units.</p><p class="mut">Space = skip the wait for the next wave. Waves also start on their own after ${INTERMISSION}s. <b>Auto Skip</b> starts the next wave a few seconds after the last enemy spawns, or after 30s at the latest.</p>`;
     return;
   }
   const d=t.def;
