@@ -222,6 +222,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
     <div class="panel">
       <div class="loadout" id="loadout-b"></div>
       <div id="mvbar" class="mut" style="margin-top:8px;font-size:13px"></div>
+      <div class="row" style="margin:8px 0 0"><button class="btn" data-unequip="1" style="flex:none">Unequip All</button></div>
       <div class="teamsbox" style="margin-top:10px"></div>
       <p class="mut" style="margin:10px 0 0">Drag a unit (or tap it, then tap another slot) to move or swap it. Add or remove units from the Units tab. You bring 6 into battle. Slot 1 is your <b>Leader</b>: its 4DV4NC3D P4TH is active, and teammates that share Tags with it get stronger (+10% DMG, range and −10% SPA per shared Tag, stacking). The Leader gets +5% for each teammate that shares a Tag (no stacking).</p>
     </div>
@@ -252,7 +253,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
   </section>
 
   <section id="t-units" hidden>
-    <h3>Loadout (6)</h3><div class="row" style="margin:0 0 8px"><button class="btn" id="autofill" style="flex:none">Autofill Team</button></div>
+    <h3>Loadout (6)</h3><div class="row" style="margin:0 0 8px"><button class="btn" id="autofill" style="flex:none">Autofill Team</button><button class="btn" data-unequip="1" style="flex:none">Unequip All</button></div>
     <div class="panel"><div class="loadout" id="loadout-u"></div><div class="teamsbox" style="margin-top:10px"></div></div>
     <h3>Collection</h3>
     <input class="search" id="usearch" placeholder="Search your units (name, tag, rarity)…">
@@ -261,7 +262,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
 
   <section id="t-items" hidden><h3>Items</h3><p class="mut">Only items you have obtained show here. Tap one to see what it is for.</p><div class="panel"><div class="itemrow" id="items"></div></div></section>
   <section id="t-quests" hidden><h3>Quests</h3><div id="questbox"></div></section>
-  <section id="t-shop" hidden><h3>Raid Shops</h3><div class="shopgrid"><nav id="shopnav"></nav><div id="shopbox"></div></div></section>
+  <section id="t-shop" hidden><h3>Shops</h3><div class="shopgrid"><nav id="shopnav"></nav><div id="shopbox"></div></div></section>
   
 </div>
 
@@ -417,7 +418,7 @@ U('Secret','shanks','One-armed Pirate','Shanks','🏴‍☠️','dps',5000,3.5,1
 U('Secret','sjw4','S-Rank Hunter','SJW evolved','🌑','dps',4800,3.6,140,{evo:true,maxPlace:1,dot:'poison',arise:true,p:'Arise: defeated enemies have a 1/3 chance to become shadow soldiers.'});
 
 /* ---------- MALFUNCTION ---------- */
-U('Malfunction','sjw5','Shadow Monarch','SJW, Final Form','👑','dps',7500,4.2,160,{evo:true,maxPlace:1,arise:true,monarch:true,p:'Shadow Legion: kills may rise as shadow soldiers. Monarch\'s Subjects: Igris and Beru always tag along, following up attacks for 50% of their unit damage, or by 100% if they are on your team (that costs 5% DMG each, and they cannot be placed on the map). Igris adds Bleed and Beru adds Poison.',a:[{n:'Army of Shadows',d:'Summon 5 shadow soldiers for 20s.',cd:45,u:3,t:'summon',ic:'👤',cnt:5,m:.5,sp:.5,dur:20}]});
+U('Malfunction','sjw5','Shadow Monarch','SJW, Final Form','👑','dps',7500,4.2,160,{evo:true,maxPlace:1,arise:true,monarch:true,p:'Shadow Legion: kills may rise as shadow soldiers. Loyal Shadows: Igris and Beru always tag along, following up every attack for 50% of their unit damage (DOT scaled to match), 100% if they are on your team, or 125% if both are (that costs 5% DMG each). Igris adds Bleed and Beru adds Poison.',a:[{n:'Army of Shadows',d:'Summon 5 shadow soldiers for 20s.',cd:45,u:3,t:'summon',ic:'👤',cnt:5,m:.5,sp:.5,dur:20}]});
 /* ---------- Tags: anime · story status · powers. Units can have several. ---------- */
 
 const TAGS={
@@ -484,10 +485,10 @@ UNITS.forEach(u=>{u.tags=TAGS[u.id]||[]});
 const DEF=Object.fromEntries(UNITS.map(u=>[u.id,u]));
 /* ---------- SJW + Igris/Beru: each one on the team costs SJW 5% DMG, and in return follows up every SJW attack ---------- */
 const SJW_LINE=['sjw','sjw2','sjw3','sjw4','sjw5'],FOLLOW=['igris','beru'];
-const shadowBound=id=>FOLLOW.includes(id)&&SAVE.loadout.includes('sjw5');   // Igris/Beru can't be placed while the Shadow Monarch is on the team
 const followers=()=>FOLLOW.filter(id=>SAVE.loadout.includes(id));
+const LOYAL=1.25;   // Loyal Shadows: with BOTH Igris (Blood Commander) and Beru (Ant King) on the team, their follow-ups deal 1.25x (otherwise 1x; the Monarch alone gets 0.5x)
 const sjwPen=d=>SJW_LINE.includes(d.id)?1-.05*followers().length:1;
-SJW_LINE.forEach(id=>{if(DEF[id])DEF[id].p+='   Loyal Shadows: If "Blood Commander" or "Ant King" are on the team: -5% DMG for each, but every attack is followed up by them, applying their DOT.'});
+SJW_LINE.forEach(id=>{if(id!=='sjw5'&&DEF[id])DEF[id].p+='   Loyal Shadows: If "Blood Commander" or "Ant King" are on the team: -5% DMG for each, but every attack is followed up by them, applying their DOT. If both are on the team, their follow-up deals 25% more damage (1.25x) and their DOT scales with it.'});
 /* ---------- Cost and placement limits: set by each unit's damage vs the median of its rarity (late-game growth counts a little) ---------- */
 const RATIO={},COST={},PLACE={};
 (()=>{
@@ -586,37 +587,37 @@ const INTERMISSION=8;   // seconds before the next wave is forced to start
 
 /* ---------- Maps (hp = difficulty multiplier, drops = what a clear can give) ---------- */
 const MAPS=[
-  {id:'plains',name:'Training Plains',desc:'A winding road. Perfect for learning the ropes.',waves:20,hp:1.1,gems:200,bossName:'Giant Goblin',
+  {id:'plains',name:'Training Plains',desc:'A winding road. Perfect for learning the ropes.',waves:20,hp:1.0,gems:200,bossName:'Giant Goblin',
    drops:[{id:'crystal',p:1,min:1,max:1},{unit:'slime',p:.05}],
    pts:[[-30,100],[700,100],[700,260],[180,260],[180,420],[930,420]],bg:'#2b4a34',dot:'#355a3f',edge:'#1b2d20',road:'#a58b5a',dash:'#c8b27d'},
-  {id:'soul',name:'Soul Society',desc:'Rooftops and Seireitei walls.',waves:20,hp:1.2,gems:300,bossName:'Menos Grande',
+  {id:'soul',name:'Soul Society',desc:'Rooftops and Seireitei walls.',waves:20,hp:1.065,gems:300,bossName:'Menos Grande',
    drops:[{id:'badge',p:1,min:1,max:3},{id:'crystal',p:1,min:1,max:3}],
    pts:[[-30,80],[250,80],[250,220],[60,220],[60,460],[420,460],[420,300],[620,300],[620,140],[860,140],[860,500],[930,500]],bg:'#2e3b4d',dot:'#384860',edge:'#141b26',road:'#c9c2a8',dash:'#fff2c9'},
-  {id:'alley',name:'Cursed Alley',desc:'Shibuya after dark. Curses lurk everywhere.',waves:20,hp:1.6,gems:350,bossName:'Special-Grade Curse',
+  {id:'alley',name:'Cursed Alley',desc:'Shibuya after dark. Curses lurk everywhere.',waves:20,hp:1.13,gems:350,bossName:'Special-Grade Curse',
    drops:[{id:'finger',p:1,min:3,max:5},{id:'seal',p:1,min:3,max:5},{id:'crystal',p:1,min:1,max:3}],
    pts:[[-30,460],[150,460],[150,90],[330,90],[330,460],[510,460],[510,90],[700,90],[700,460],[930,460]],bg:'#2a2538',dot:'#352e48',edge:'#15121e',road:'#4d4766',dash:'#7a72a0'},
-  {id:'mansion',name:"Roswaal's Mansion",desc:'Maids, mana, and a very persistent knight.',waves:20,hp:1.7,gems:380,bossName:'Witch Cult Archbishop',
+  {id:'mansion',name:"Roswaal's Mansion",desc:'Maids, mana, and a very persistent knight.',waves:20,hp:1.21,gems:380,bossName:'Witch Cult Archbishop',
    drops:[{id:'witch',p:1,min:3,max:5},{id:'crystal',p:1,min:1,max:3}],
    pts:[[-30,150],[260,150],[260,400],[500,400],[500,150],[740,150],[740,480],[930,480]],bg:'#3a2a44',dot:'#47345a',edge:'#1c1224',road:'#b79ad9',dash:'#f0e2ff'},
-  {id:'namek',name:'Planet Namek',desc:'Green skies, floating islands, and seven glowing orbs.',waves:20,hp:1.8,gems:400,bossName:'Armored Tyrant',
+  {id:'namek',name:'Planet Namek',desc:'Green skies, floating islands, and seven glowing orbs.',waves:20,hp:1.29,gems:400,bossName:'Armored Tyrant',
    drops:[{id:'dball',p:1,min:3,max:5},{id:'crystal',p:1,min:1,max:3}],
    pts:[[-30,450],[200,450],[200,300],[450,300],[450,120],[700,120],[700,350],[930,350]],bg:'#245a4a',dot:'#2e6e5a',edge:'#0f2a22',road:'#7ad1a0',dash:'#c8ffe0'},
-  {id:'slimelab',name:'Slime Labyrinth',desc:'The Great Tempest dungeon. Something big sleeps in here.',waves:20,hp:2.0,gems:500,bossName:'Labyrinth Guardian',
+  {id:'slimelab',name:'Slime Labyrinth',desc:'The Great Tempest dungeon. Something big sleeps in here.',waves:20,hp:1.37,gems:500,bossName:'Labyrinth Guardian',
    drops:[{id:'core',p:.2,min:1,max:1},{unit:'slime',p:.2},{id:'crystal',p:1,min:2,max:3}],
    pts:[[-30,270],[120,270],[120,70],[300,70],[300,200],[480,200],[480,70],[660,70],[660,330],[300,330],[300,470],[780,470],[780,200],[930,200]],bg:'#1f3b44',dot:'#285060',edge:'#0e1e24',road:'#4fa3a8',dash:'#9be8ea'},
-  {id:'leaf',name:'Hidden Leaf Village',desc:'Rooftop chases and rogue ninja.',waves:20,hp:2.2,gems:550,bossName:'Rogue Ninja',
+  {id:'leaf',name:'Hidden Leaf Village',desc:'Rooftop chases and rogue ninja.',waves:20,hp:1.46,gems:550,bossName:'Rogue Ninja',
    drops:[{id:'crystal',p:1,min:2,max:3}],
    pts:[[-30,270],[200,270],[200,100],[420,100],[420,420],[640,420],[640,100],[860,100],[860,440],[930,440]],bg:'#4a3a26',dot:'#5a4830',edge:'#241a0e',road:'#d9b77a',dash:'#fff0c8'},
-  {id:'marine',name:'Marineford',desc:'The great war on the plaza. Admirals hit hard.',waves:20,hp:2.4,gems:650,bossName:'Admiral',
+  {id:'marine',name:'Marineford',desc:'The great war on the plaza. Admirals hit hard.',waves:20,hp:1.55,gems:650,bossName:'Admiral',
    drops:[{id:'crystal',p:1,min:2,max:4}],
    pts:[[-30,80],[300,80],[300,240],[100,240],[100,420],[560,420],[560,240],[820,240],[820,80],[930,80]],bg:'#1c3a5c',dot:'#264a72',edge:'#0c1c30',road:'#cfd8e6',dash:'#ffffff'},
-  {id:'dungeon',name:'Double Dungeon',desc:'A gate to a hidden dungeon. Do not read the statue.',waves:20,hp:2.5,gems:750,bossName:'Dungeon Boss',
+  {id:'dungeon',name:'Double Dungeon',desc:'A gate to a hidden dungeon. Do not read the statue.',waves:20,hp:1.65,gems:750,bossName:'Dungeon Boss',
    drops:[{id:'crystal',p:1,min:3,max:4}],
    pts:[[-30,70],[820,70],[820,230],[80,230],[80,390],[820,390],[820,500],[930,500]],bg:'#241f33',dot:'#2f2945',edge:'#0e0b18',road:'#3d6b8f',dash:'#9be0ff'},
-  {id:'citadel',name:'Demon Citadel',desc:'A spiral to the throne. Bosses galore.',waves:20,hp:2.6,gems:800,bossName:'Demon General',
+  {id:'citadel',name:'Demon Citadel',desc:'A spiral to the throne. Bosses galore.',waves:20,hp:1.76,gems:800,bossName:'Demon General',
    drops:[{id:'crystal',p:1,min:3,max:4}],
    pts:[[-30,60],[840,60],[840,480],[60,480],[60,170],[730,170],[730,370],[170,370],[170,270],[450,270]],bg:'#3a1f26',dot:'#4a2630',edge:'#1c0d11',road:'#6b3a3a',dash:'#a15b5b'},
-  {id:'infinity',name:'Infinity Castle',desc:'Endless waves. How far can you get?',waves:Infinity,endless:true,hp:3.2,gems:0,bossName:'Castle Lord',
+  {id:'infinity',name:'Infinity Castle',desc:'Endless waves. How far can you get?',waves:Infinity,endless:true,hp:1.0,gems:0,bossName:'Castle Lord',
    drops:[],
    pts:[[-30,270],[150,270],[150,80],[750,80],[750,270],[330,270],[330,430],[750,430],[750,500],[930,500]],bg:'#1d1a2e',dot:'#2a2545',edge:'#0b0916',road:'#59467d',dash:'#a68bd6'}
 ];
@@ -626,10 +627,10 @@ const MAPS=[
 MAPS.forEach(m=>{m.drops=m.drops.filter(d=>d.id!=='crystal')});   // System Crystals now come from raid shops
 MAPS.find(m=>m.id==='dungeon').drops.push({unit:'sjw',p:.1});
 const INF=MAPS.find(m=>m.id==='infinity');
-[{id:'special',name:'Special Dungeon Raid',desc:'A red gate. Something worthy of Arise waits inside.',waves:30,hp:3.0,gems:900,bossName:'Blood Commander',need:'q2',drops:[{unit:'igris',p:.33,pity:3},{id:'tok_special',p:1,min:5,max:8}]},
- {id:'island',name:'Island Raid',desc:'Ants swarm the island. Their king is near.',waves:30,hp:3.5,gems:1100,bossName:'Ant King',need:'q3',drops:[{unit:'beru',p:.33,pity:3},{id:'tok_island',p:1,min:5,max:8}]},
- {id:'slimeraid',name:'Slime Raid',desc:'The Tempest Federation is under siege. Earn your Nametags.',waves:30,hp:3.3,gems:1000,bossName:'Demon Lord',needMap:'slimelab',pts:[[-30,480],[780,480],[780,60],[120,60],[120,380],[560,380],[560,200],[300,200]],bg:'#1f3a3f',dot:'#284a50',edge:'#0c1c1f',road:'#5fb5b0',dash:'#b4f0ea',drops:[{id:'tok_slime',p:1,min:5,max:8}]},
- {id:'monarch',cm:1.5,bm:2,name:'Monarch Trial',desc:'The final test. Bring your shadows.',waves:50,hp:4.2,gems:1500,bossName:'Monarch',need:'q4',trial:true,pts:[[-30,70],[820,70],[820,230],[80,230],[80,390],[820,390],[820,500],[930,500]],bg:'#0d0a16',dot:'#161227',edge:'#05030a',road:'#2a1f4a',dash:'#6b3fb0',drops:[{id:'cup',p:1,min:1,max:1},{id:'tok_monarch',p:1,min:5,max:8}]}
+[{id:'special',name:'Special Dungeon Raid',desc:'A red gate. Something worthy of Arise waits inside.',waves:30,hp:1.0,gems:900,bossName:'Blood Commander',need:'q2',drops:[{unit:'igris',p:.33,pity:3},{id:'tok_special',p:1,min:5,max:8}]},
+ {id:'island',name:'Island Raid',desc:'Ants swarm the island. Their king is near.',waves:30,hp:1.08,gems:1100,bossName:'Ant King',need:'q3',drops:[{unit:'beru',p:.33,pity:3},{id:'tok_island',p:1,min:5,max:8}]},
+ {id:'slimeraid',name:'Slime Raid',desc:'The Tempest Federation is under siege. Earn your Nametags.',waves:30,hp:1.17,gems:1000,bossName:'Demon Lord',pts:[[-30,480],[780,480],[780,60],[120,60],[120,380],[560,380],[560,200],[300,200]],bg:'#1f3a3f',dot:'#284a50',edge:'#0c1c1f',road:'#5fb5b0',dash:'#b4f0ea',drops:[{id:'tok_slime',p:1,min:5,max:8}]},
+ {id:'monarch',cm:1.5,bm:2,name:'Monarch Trial',desc:'The final test. Bring your shadows.',waves:50,hp:1.0,gems:1500,bossName:'Monarch',need:'q4',trial:true,pts:[[-30,70],[820,70],[820,230],[80,230],[80,390],[820,390],[820,500],[930,500]],bg:'#0d0a16',dot:'#161227',edge:'#05030a',road:'#2a1f4a',dash:'#6b3fb0',drops:[{id:'cup',p:1,min:1,max:1},{id:'tok_monarch',p:1,min:5,max:8}]}
 ].forEach(r=>MAPS.push(Object.assign({},INF,{endless:false,raid:true},r)));
 /* ---------- System paths: 7 themed paths of 4 steps. You choose the path, then each 1 crystal buys the next step. ---------- */
 const SYS=[];
@@ -638,15 +639,15 @@ PATH('sai','⚡',[['Path of the Saiyans','+8% DMG',{dmg:.08}],['Zenkai Boost','+
 PATH('hok','🍥',[['Path of the Hokage','-5% cooldown',{spa:.05}],['Shadow Clone Training','-7% cooldown',{spa:.07}],['Sage Reflexes','-9% cooldown, +4% DMG',{spa:.09,dmg:.04}],['Will of Fire','-9% cooldown, +6% DMG.',{spa:.09,dmg:.06}]]);
 PATH('dfu','🍎',[['Path of Devil Fruits','+20% DOT damage, +10% DOT duration',{dotDmg:.20,dotDur:.10}],['Awakening','+25% DOT damage, +10% DOT duration',{dotDmg:.25,dotDur:.10}],['Logia Body','+30% DOT damage, +10% DOT duration, +5% DMG',{dotDmg:.30,dotDur:.10,dmg:.05}],['Full Awakening','+35% DOT damage, +20% DOT duration, +5% DMG.',{dotDmg:.35,dotDur:.20,dmg:.05}]]);
 PATH('hak','💢',[['Path of Haki','+30% HP. All allies +2% DMG.',{hp:.30,tb:[{all:true,dmg:.02}]}],['Armament Haki','+40% HP. All allies +3% DMG.',{hp:.40,tb:[{all:true,dmg:.03}]}],['Observation Haki','+50% HP, +4% DMG. All allies +3% DMG, -2% cooldown.',{hp:.50,dmg:.04,tb:[{all:true,dmg:.03,spa:.02}]}],["Conqueror's Haki",'+60% HP, +6% DMG. All allies +4% DMG, -3% cooldown, +15% max HP.',{hp:.60,dmg:.06,tb:[{all:true,dmg:.04,spa:.03,hp:.15}]}]]);
-PATH('qui','🏹',[['Path of Quincies','+8% range',{rng:.08}],['Spirit Bow','+10% range',{rng:.10}],['Sanrei Glove','+12% range, +5% crit chance',{rng:.12,critRate:.05}],['Vollständig','+15% range, +5% crit chance, +5% DMG.',{rng:.15,critRate:.05,dmg:.05}]]);
+PATH('qui','🏹',[['Path of Quincies','+10% range',{rng:.10}],['Spirit Bow','+13% range',{rng:.13}],['Sanrei Glove','+16% range, +5% crit chance',{rng:.16,critRate:.05}],['Vollständig','+20% range, +5% crit chance, +5% DMG.',{rng:.20,critRate:.05,dmg:.05}]]);
 PATH('sor','🗡️',[['Path of Soul Reapers','+6% crit chance, +8% crit DMG',{critRate:.06,critDmg:.08}],['Shikai','+9% crit chance, +12% crit DMG',{critRate:.09,critDmg:.12}],['Bankai','+11% crit chance, +10% crit DMG',{critRate:.11,critDmg:.10}],['Hollow Mask','+14% crit chance, +15% crit DMG, +25% crit DMG vs bosses.',{critRate:.14,critDmg:.15,critBoss:.25}]]);
 PATH('man','💴',[['Path of the Mangaka','+15% ¥ earned',{income:.15}],['Best-Seller','+20% ¥ earned',{income:.20}],['Anime Adaptation','+25% ¥ earned, +5% DMG',{income:.25,dmg:.05}],['Merch Empire','+30% ¥ earned, +5% DMG',{income:.30,dmg:.05}]]);
 const SYS_BY=Object.fromEntries(SYS.map(n=>[n.id,n]));
 /* 4DV4NC3D P4TH: only evolved units get it. You CHOOSE every step (1 🔮 each). Damage scales with how many Tags the unit has. */
 const SYS2=[
-  {id:'unk',n:'4DV4NC3D P4TH',            ic:'❓',req:null, d:'+8% DMG per Tag',fx:{tagDmg:.1}},
-  {id:'bl1',n:'Bloodline',      ic:'🧬',req:'unk',d:'+8% DMG per Tag',fx:{tagDmg:.08}},
-  {id:'bl2',n:'Ancestral Rage', ic:'💢',req:'bl1',d:'+8% DMG per Tag',fx:{tagDmg:.08}},
+  {id:'unk',n:'4DV4NC3D P4TH',            ic:'❓',req:null, d:'+10% DMG per Tag',fx:{tagDmg:.1}},
+  {id:'bl1',n:'Bloodline',      ic:'🧬',req:'unk',d:'+10% DMG per Tag',fx:{tagDmg:.1}},
+  {id:'bl2',n:'Ancestral Rage', ic:'💢',req:'bl1',d:'+10% DMG per Tag',fx:{tagDmg:.1}},
   {id:'od1',n:'Overdrive',      ic:'🚀',req:'unk',d:'−10% SPA, +10% RNG, +5% crit rate. Units with 3 or fewer Tags: +5% DMG for each Tag below 5.',fx:{spa:.10,rng:.10,critRate:.05,lowTag:.05}},
   {id:'od2',n:'Limit Break',    ic:'💥',req:'od1',d:'−15% SPA, +15% crit rate, +25% crit DMG. Units with 3 or fewer Tags: another +5% DMG for each Tag below 5.',fx:{spa:.15,critRate:.15,critDmg:.25,lowTag:.05}},
   /* farm-only: works even when the unit is not the Leader */
@@ -864,14 +865,15 @@ function dropText(m){
   }).join(' · ');
 }
 const MO={s:true,r:false,t:true};
-function mapOpen(m,i){const hasU=SAVE.loadout.length>0;return (SAVE.devUnlock&&hasU)||(m.raid?(!m.needMap||SAVE.cleared[m.needMap])&&hasU:(i===0||SAVE.cleared[MAPS[i-1].id]||MAPS.slice(i).some(x=>SAVE.cleared[x.id]))&&hasU)}
+const raidPrev=m=>{if(!m.raid||m.trial)return null;const R=MAPS.filter(x=>x.raid&&!x.trial),i=R.indexOf(m);return i>0?R[i-1]:null};   // Raids unlock in order: Raid 1 is always open, each later raid needs the previous one cleared
+function mapOpen(m,i){const hasU=SAVE.loadout.length>0;return (SAVE.devUnlock&&hasU)||(m.raid?(m.trial?(!m.needMap||SAVE.cleared[m.needMap]):(!raidPrev(m)||SAVE.cleared[raidPrev(m).id]))&&hasU:(i===0||SAVE.cleared[MAPS[i-1].id]||MAPS.slice(i).some(x=>SAVE.cleared[x.id]))&&hasU)}
 function nextMap(m){const kind=x=>x.trial?'t':x.raid?'r':'s';for(let j=MAPS.indexOf(m)+1;j<MAPS.length;j++){if(kind(MAPS[j])===kind(m))return mapOpen(MAPS[j],j)?MAPS[j]:null}return null}   // the next map of the same kind, if you can play it
 function mapCard(m,i){
   const hasU=SAVE.loadout.length>0,open=mapOpen(m,i),done=SAVE.cleared[m.id];
   return `<div class="panel map ${open?'':'locked'}">${done?'<span class="tag">CLEARED ✔</span>':''}<h2>${m.name}</h2>
     <div class="thumb" style="background:linear-gradient(135deg,${m.bg},${m.road})"></div><div class="mut">${m.desc}</div>
     <p style="margin:8px 0 0">${m.endless?'Endless':m.waves+' waves'}${m.endless?'':' · 💎'+m.gems+'+'}</p><p class="drops">Drops: ${dropText(m)}${!m.raid&&!m.endless&&!done?' · First clear: 🔮 ×2':''}</p>
-    <button class="primary" data-map="${m.id}" ${open?'':'disabled'}>${open?'Play':(m.raid&&m.needMap&&!SAVE.cleared[m.needMap]?'🔒 Clear '+MAPS.find(x=>x.id===m.needMap).name+' first':(m.raid&&!(!m.need||SAVE.quests[m.need])?'🔒 Finish the previous quest':(hasU?'🔒 Clear previous map':'Equip a unit first')))}</button></div>`;
+    <button class="primary" data-map="${m.id}" ${open?'':'disabled'}>${open?'Play':(!hasU?'Equip a unit first':(raidPrev(m)?'🔒 Clear '+raidPrev(m).name+' first':'🔒 Clear previous map'))}</button></div>`;
 }
 function renderMaps(){
   const st=MAPS.map((m,i)=>m.raid?'':mapCard(m,i)).join(''),rd=MAPS.map((m,i)=>m.raid&&!m.trial?mapCard(m,i):'').join(''),tr=MAPS.map((m,i)=>m.trial?mapCard(m,i):'').join('');
@@ -896,7 +898,9 @@ let SHOPSEL=null;
 function renderShop(){   // sidebar of raid shops + one full shop page for the selected raid
   const L=[...new Set(SHOP.map(r=>r.t))].map(t=>({t,m:MAPS.find(m=>m.drops&&m.drops.some(d=>d.id===t))}));
   if(!SHOPSEL||!L.some(x=>x.t===SHOPSEL))SHOPSEL=L[0]&&L[0].t;
-  $('#shopnav').innerHTML=L.map(x=>`<button class="${x.t===SHOPSEL?'primary':'btn'}" data-shop="${x.t}" style="text-align:left">${ITEMS[x.t].ic} ${x.m?x.m.name:ITEMS[x.t].n}<br><small>${item(x.t)} ${ITEMS[x.t].n}</small></button>`).join('');
+  L.sort((a,b)=>(a.m&&a.m.trial?1:0)-(b.m&&b.m.trial?1:0));   // Raid shops first, Trial shops after
+  const catOf=x=>x.m&&x.m.trial?'Trials':'Raids';let lastCat='';
+  $('#shopnav').innerHTML=L.map(x=>{const c=catOf(x),hd=c!==lastCat?`<div class="mut" style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:${lastCat?'8px':'0'} 0 0;white-space:nowrap">${c}</div>`:'';lastCat=c;return hd+`<button class="${x.t===SHOPSEL?'primary':'btn'}" data-shop="${x.t}" style="text-align:left">${ITEMS[x.t].ic} ${x.m?x.m.name:ITEMS[x.t].n}<br><small>${item(x.t)} ${ITEMS[x.t].n}</small></button>`}).join('');
   const cur=L.find(x=>x.t===SHOPSEL);if(!cur){$('#shopbox').innerHTML='';return}
   const nm=cur.m?cur.m.name:'Raid';
   $('#shopbox').innerHTML=`<div class="panel" style="min-height:62vh"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center"><h2 style="font-size:36px">${nm} Shop</h2><span class="pill" style="font-size:18px">${ITEMS[cur.t].ic} ${item(cur.t)} ${ITEMS[cur.t].n}</span></div><p class="mut">Earn ${ITEMS[cur.t].n}s by clearing ${nm}, then spend them here.</p><div class="sgrid">`+SHOP.map((r,k)=>r.t===cur.t?`<div class="scard"><b>${ITEMS[r.i].ic} ${r.q>1?r.q+'× ':''}${ITEMS[r.i].n}</b><br><span class="mut" style="font-size:12px">${ITEMS[r.i].d}</span><br>${r.q>1?'<b>'+r.q+' for</b> ':''}${r.c}× ${ITEMS[r.t].ic} ${ITEMS[r.t].n}<br><button class="primary" data-buy="${k}" ${item(r.t)>=r.c?'':'disabled'}>Buy</button></div>`:'').join('')+'</div></div>';
@@ -956,13 +960,17 @@ function treeHtml(list,parent,path,cur,active){
   }).join('')+'</ul>';
 }
 /* ---------- Recommended path: estimates DPS for each choice with its whole chain (damage, cooldown, crits, DOT) ---------- */
-function fxOf(list){const f={dmg:0,spa:0,rng:0,critRate:0,critDmg:0,income:0,dotDmg:0,dotDur:0,hp:0,tagDmg:0,lowTag:0};list.forEach(n=>{for(const k in n.fx){if(typeof n.fx[k]==='number'&&k in f)f[k]+=n.fx[k]}});return f}
+function fxOf(list){const f={dmg:0,spa:0,rng:0,critRate:0,critDmg:0,critBoss:0,bossDmg:0,income:0,dotDmg:0,dotDur:0,hp:0,tagDmg:0,lowTag:0};list.forEach(n=>{for(const k in n.fx){if(typeof n.fx[k]==='number'&&k in f)f[k]+=n.fx[k]}});return f}
 function dpsWith(d,f){
   if(d.role==='farm')return d.income*(1+f.income);
   const spaM=Math.max(.25,1-f.spa),cc=Math.min(.6,(d.crit?d.crit[0]:.05)+f.critRate),cm=(d.crit?d.crit[1]:1.5)*(1+f.critDmg);
   let dot=0;if(d.dot){const K=DOTS[d.dot];dot=K.x/K.y*(1+f.dotDmg)*Math.min(d.spa*spaM,K.y*(1+f.dotDur))}
   const nt=d.tags.length,tg=(1+f.tagDmg*nt)*(nt<=3?1+f.lowTag*(5-nt):1);
-  return (1+f.dmg)*tg*(1+cc*(cm-1)+dot)/spaM*(1+.08*(f.hp||0));   // a little weight on HP for longevity
+  // what each unit NEEDS decides which path scores best:
+  //  range: short-range units gain the most from range (Quincies);  HP: frontline melee units with low base HP gain the most (Haki);
+  //  boss damage: matters for slow, heavy hitters (Saiyans, Soul Reapers);  speed: fast attackers proc crits/on-hit effects more (Hokage)
+  const rngW=Math.max(.25,Math.min(1,(170-d.rng)/60)),hpW=(isMelee(d)?.3:.1)*Math.max(.4,Math.min(1,100/(d.hp||100))),spdW=Math.max(0,Math.min(1,(5-d.spa)/3.3)),bsW=.15*Math.max(.5,Math.min(2,d.spa/4));
+  return (1+f.dmg)*tg*(1+cc*(cm-1)+dot)/spaM*(1+f.rng*rngW)*(1+hpW*(f.hp||0))*(1+bsW*((f.bossDmg||0)+cc*(f.critBoss||0)))*(1+.35*f.spa*spdW);
 }
 function recAdv(id){   // recommended advanced-path step (same DPS estimate as the System path)
   const d=DEF[id],p2=SAVE.sys2[id]||[],cur=p2.length?p2[p2.length-1]:null;
@@ -1213,18 +1221,20 @@ function effDps0(u,L,team){   // rough damage-per-second estimate (used only by 
   }
   return v;
 }
-const isBound=(u,team)=>FOLLOW.includes(u.id)&&team.some(x=>x.id==='sjw5');   // Igris/Beru can't be placed while the Shadow Monarch is on the team
-function boundVal(u,team,L){const M=team.find(x=>x.id==='sjw5'),st=1+.1*stars(u.id);return u.dps*st-.5*u.dmg*st/M.spa-.05*effDps(M,L,team)}   // follow-up gained minus the 50% they'd give anyway, minus the 5% DMG cost
+function followGain(u,team,L){const M=team.find(x=>x.id==='sjw5'),st=1+.1*stars(u.id),fm=team.filter(x=>FOLLOW.includes(x.id)).length===2?LOYAL:1;return u.dps*st*fm-.5*u.dmg*st/M.spa-.05*effDps(M,L,team)}   // Loyal Shadows: Igris/Beru are normal placeable units, and being on the team ALSO upgrades their follow-up of the Monarch (minus the 50% they'd give anyway, minus the 5% DMG each costs the Monarch)
 function teamScore(team,L){
-  const att=team.filter(u=>u.role!=='support'&&u.role!=='farm'&&!isBound(u,team)),sum=att.reduce((a,u)=>a+effDps(u,L,team),0);
+  const att=team.filter(u=>u.role!=='support'&&u.role!=='farm'),sum=att.reduce((a,u)=>a+effDps(u,L,team),0);
   let s=0;
   for(const u of team){
-    s+=isBound(u,team)?boundVal(u,team,L):effDps(u,L,team);
+    s+=effDps(u,L,team);
+    if(FOLLOW.includes(u.id)&&team.some(x=>x.id==='sjw5'))s+=followGain(u,team,L);   // Loyal Shadows bonus on top of their own damage
     if(u.aura)s+=(sum-(att.includes(u)?effDps(u,L,team):0))*.6*((u.aura.dmg||0)+(u.aura.spa||0)*1.2+(u.aura.rng||0)*.3);   // supports boost everyone else
     if(u.vuln)s+=sum*.5*u.vuln;
     if(u.auraSlow)s+=sum*.3*u.auraSlow;
     if(u.heal)s+=sum*.1;
   }
+  {const sj=team.filter(u=>SJW_LINE.includes(u.id)&&u.id!=='sjw5'),fol=team.filter(u=>FOLLOW.includes(u.id)),fm=fol.length===2?LOYAL:1;   // Loyal Shadows: placed Igris/Beru follow every attack of the SJW line (1.25x with both)
+   if(!team.some(u=>u.id==='sjw5'))for(const a of sj){const pl=1+(Math.max(1,maxOf(a))-1)*PLACE_W;for(const f of fol)s+=(f.dps*(1+.1*stars(f.id))*fm-.05*effDps(a,L,team)/pl)*pl}}
   {const v=team.find(u=>u.id==='veg'),g=team.find(u=>u.id==='goku2')||team.find(u=>u.id==='goku');if(v&&g)s+=.3*(effDps(v,L,team)+effDps(g,L,team))}   // Saiyan Rivalry
   return s;
 }
@@ -1243,7 +1253,7 @@ function autoEquipTagged(leaderId,mode){
     pool=pool.slice();
     while(team.length<size&&pool.length){
       const base=teamScore(team,lead);let best=null,bs=-1e18;
-      for(const u of pool){if(clash(team.map(x=>x.id),u.id))continue;const sc=teamScore(team.concat(u),lead)-base;if(isBound(u,team.concat(u))&&sc<0)continue;if(sc>bs){bs=sc;best=u}}
+      for(const u of pool){if(clash(team.map(x=>x.id),u.id))continue;const sc=teamScore(team.concat(u),lead)-base;if(sc>bs){bs=sc;best=u}}
       if(!best)break;team.push(best);pool.splice(pool.indexOf(best),1);
     }
     return team;
@@ -1280,7 +1290,7 @@ function autoEquipBest(leaderId){
     const forced=Math.max(0,CH-team.filter(cheap).length)>=6-team.length&&pool.some(cheap),base=teamScore(team,lead);
     let best=null,bs=-1e18;
     for(const u of pool){if(clash(team.map(x=>x.id),u.id))continue;if(forced&&!cheap(u))continue;const sc=teamScore(team.concat(u),lead)-base;if(sc>bs){bs=sc;best=u}}
-    if(!best)break;if(bs<0&&isBound(best,team.concat(best)))break;team.push(best);pool.splice(pool.indexOf(best),1);
+    if(!best)break;team.push(best);pool.splice(pool.indexOf(best),1);
   }
   // 3) Polish: swap any teammate for an unused unit if that makes the whole team stronger
   for(let pass=0,more=true;more&&pass<4;pass++){
@@ -1314,37 +1324,6 @@ function freePull(){
 
 /* ---------- Update Log (newest entry first: add a new object at the top for each update) ---------- */
 const UPDATE_LOG=[
- {v:'Update 0.5',rev:7,sub:'Raids, paths and quality of life',sections:[
-  {h:'✨ New this patch: quality of life',items:[
-   'Your <b>game speed</b> (1× to 3×) is remembered and stays the same in every game.',
-   '<b>Active abilities</b> can now be used straight from a selected unit\'s menu on the map. The buttons only control that unit.',
-   '<b>Star Transfer</b>: move ★ from a pre-evolution to its evolved form (like Monkey Kid to Super Monkey) without evolving again. Costs 1 🔮 System Crystal per ★. Open either unit to find it.',
-   '<b>Raid shops</b> now sell <b>🌟 Star Crystals</b> for 15 tokens each: use one on a unit to add a ★ with no duplicate.',
-   'Evolution items in the raid shops come in the amount one evolution needs: 5 Soul Badges, 5 Shikigami Seals, 5 Witch Factors, 7 Dragon Balls, and 5 Cursed Fingers (enough for Yuji; Sukuna needs 10).',
-   '<b>Verse Teams</b>: if slots 1 to 5 all come from the same anime (the universe Tag, like Bleach or One Piece), the whole team gets <b>+15% DMG and -10% cooldown</b>. It replaces the Theme buff instead of stacking.',
-   '<b>Autofill Team</b> now asks what you want when a Leader is already in slot 1: <b>Best Team</b>, <b>Theme Team</b> (strongest units sharing a Tag with the Leader) or <b>Verse Team</b> (strongest units from the Leader\'s anime). The last slot stays a farm unit unless a farm unit\'s Tag helps the team.',
-   '<b>Phantom Placement</b> no longer blocks <b>Auto-Upgrade</b> while it waits for money. Units keep auto-upgrading, and a phantom is only placed ahead of upgrades the moment you can afford it.',
-   'A <b>Next map ▶</b> button on the victory screen takes you straight to the next map you can play.',
-   'Dupe ★ now give <b>dedicated farm units +30% income each</b> (up to +150% at 5★), including their Harvest ability.',
-   '<b>Autofill Team</b> now counts every placement a unit can have, so a weaker unit with more placements can win a slot. It also scores <b>Area DPS</b>: how many enemies a unit hits or can hit.',
-   '<b>Auto Skip</b> (the old Auto button): once every enemy of a wave has spawned, a short timer starts the next wave without waiting for the rest to be cleared (and a wave that takes over 30s to spawn gets the next one queued behind it). With Auto Skip off, a <b>Skip Wave?</b> prompt appears at the top of the map instead.']},
-  {h:'🐞 New this patch: fixes',items:[
-   '<b>Subaru</b> and <b>Subaru, evolved</b>: RBD now follows the missing HP of your <b>Tower</b> (🏯 base), not the unit\'s own HP.',
-   '<b>Lion Heart</b> now makes the protected ally immune to status effects (stuns, curses, Time Warp, Silence) and splits damage: Subaru takes 75%, the ally takes 25%. It works until Subaru goes down.',
-   '<b>Vegeta</b> gains <i>Saiyan Rivalry</i>: if Monkey Kid or Super Monkey is in his range, both units deal +30% DMG.']},
-  {h:'🖥️ Quality of life',items:[
-   'Boss health bars now list the status effects on them: Bleed, Poison, Burn, Stunned, Slowed and Vulnerable.',
-   'Unit data is compact and scrolls inside the side bar. The in-game <b>Unit Manager</b> uses the same side bar, and whichever you opened last is the one you see.',
-   'The 4DV4NC3D P4TH can be reset for 3 System Crystals and now marks a ⭐ recommended step.',
-   '<b>Autofill Team</b> puts the farm unit in the last slot unless it completes a theme team, and it accounts for units that are disabled (like Igris/Beru under the Shadow Monarch).',
-   'The <b>Shops</b> tab has a side menu: pick a raid shop to see your tokens for that raid and everything you can buy.']},
-  {h:'⚖️ Balance and content',items:[
-   '<b>Melee units</b> (single-target units, plus piercing melee like Zoro) now attack <b>15% faster</b>, so they keep up with splash and hit-all units.',
-   '<b>Ahjin CEO</b> is limited to 1 placement and costs 850. <b>Potential Man</b> is now an Epic.',
-   'Bloodline gives +5% DMG per Tag. Overdrive gives units with 3 or fewer Tags extra damage so they can keep up with highly tagged units.',
-   'New farm-only advanced path: from <i>Pockets Drenched</i> to <i>Money Clone Jutsu</i>, it raises the money a farm earns (it works even when not Leader).',
-   'System paths no longer buff allies by Tag. Follow-up DOTs use the follower\'s raw attack instead of its DPS.',
-   'The Monarch Trial has more enemies and more bosses. All Raids are open from the start.']}]},
  {v:'Update 0',sub:'Release',sections:[
   {h:'Content',items:[
    '57 UNITS!',
@@ -1441,6 +1420,7 @@ document.addEventListener('click',e=>{
   el.addEventListener('dragend',()=>{DRAG=-1});
 });
 document.addEventListener('click',e=>{
+  if(e.target.closest('[data-unequip]')){if(!SAVE.loadout.length){deny('Your team is already empty');return}SAVE.loadout=[];MV=-1;MODC={};save();renderAll();toast('All units unequipped');return}   // Unequip All
   const s=e.target.closest('[data-tsave]'),l=e.target.closest('[data-tload]');
   if(s){if(!SAVE.loadout.length){deny('Your team is empty');return}SAVE.teams[+s.dataset.tsave]=SAVE.loadout.slice();save();renderAll();toast('Team saved to slot '+(+s.dataset.tsave+1))}
   else if(l&&!l.disabled){const t=(SAVE.teams[+l.dataset.tload]||[]).filter(x=>SAVE.inv[x]).filter((x,i,a)=>!clash(a.slice(0,i),x));if(!t.length){deny('No units from that team are available');return}SAVE.loadout=t.slice(0,6);save();renderAll();toast('Team '+(+l.dataset.tload+1)+' loaded')}
@@ -1515,8 +1495,20 @@ function startGame(mapId){
 function leaveGame(){musicStop();cancelAnimationFrame(raf);G=null;$('#pausebox').hidden=true;$('#mgr').hidden=true;$('#side').hidden=false;$('#game').hidden=true;$('#lobby').hidden=false;renderAll();window.scrollTo(0,0);menuMusic()}
 
 /* ---------- difficulty curve ---------- */
-const HPK={base:32,growth:1.16,late:18};   // enemy HP curve: base HP, per-wave growth, and when the late-game ramp kicks in
-function hpAt(w,map){return HPK.base*Math.pow(HPK.growth,w-1)*(1+Math.pow(w/HPK.late,3))*map.hp}
+/* Enemy HP depends ONLY on the game mode, the map and the wave number (never on your team).
+   hp(wave) = h0 * (1 + lin*(wave-1)) * growth^(wave-1) * map.hp
+   h0 = the mode's starting HP (a grunt on wave 1 of its first map), growth/lin = how fast it climbs,
+   map.hp = how much harder that map is than the first map of its mode (set on each map below).
+   Story: easiest, early units (Rares/Epics) can clear it.   Infinite: endless, climbs faster than Story but is gentler than Raids/Trials.
+   Raids: hard, wants a Secret+ unit.   Trials: hardest, wants maxed late-game units. */
+const HP_MODES={
+  story:   {h0:65,  growth:1.07,  lin:.25},
+  infinite:{h0:75,  growth:1.08,  lin:.30},
+  raid:    {h0:330, growth:1.055, lin:.15},
+  trial:   {h0:750, growth:1.02,  lin:.04}
+};
+const modeOf=map=>map.trial?HP_MODES.trial:map.raid?HP_MODES.raid:map.endless?HP_MODES.infinite:HP_MODES.story;
+function hpAt(w,map){const M=modeOf(map);return M.h0*(1+M.lin*(w-1))*Math.pow(M.growth,w-1)*map.hp}
 function countAt(w){return Math.min(110,6+Math.floor(w*1.8+w*w*.02))}
 
 function buildWave(w,map){
@@ -1640,7 +1632,6 @@ function cyclePri(id){const P=SAVE.upPri||(SAVE.upPri={});P[id]=((P[id]||3)%5)+1
 function place(i,x,y,fromGhost){
   const id=SAVE.loadout[i];if(!id)return;
   const d=DEF[id],cost=costOf(d);
-  if(shadowBound(id)){deny(d.n+' is bound to the Shadow Monarch and cannot be placed.');return}
   if(G.paused){deny('Paused. Resume to place units.');return}
   if(G.towers.filter(t=>t.def.id===id).length>=maxOf(d)){deny(`Max ${maxOf(d)} of ${d.n} on the map`);return}
   if(G.yen<cost){if(!fromGhost)addGhost(i,x,y);return}
@@ -1804,24 +1795,26 @@ const cdStr=t=>t.sp.toFixed(2)+'s'+mTxt(t.mS);
 const rngStr=t=>Math.round(t.rg)+mTxt(t.mR);
 function inRange(t,e){return dist(t.x,t.y,e.x,e.y)<=t.rg+e.r}
 function followUp(t,e,w){
-  if(t.def.id==='sjw5'){   // Monarch's Subjects (test): 50% of Igris/Beru's unit damage, 100% when they are on the team
+  if(t.def.id==='sjw5'){   // Loyal Shadows (Monarch): 50% of Igris/Beru's unit damage, 100% when they are on the team
     for(const id of FOLLOW){
       const f=DEF[id],M=modOf(id),onTeam=SAVE.loadout.includes(id);
       // on the team: the standard follow-up (their DPS over his attack interval); off the team: his shadows tag along for 50% of their unit damage
-      let dmg=onTeam?f.dps*(1+.1*stars(id))*(1+M.dmg)*t.sp*w*(1+e.vuln):f.dmg*(1+.1*stars(id))*(1+M.dmg)*.5*w*(1+e.vuln);
+      const fm=onTeam?(followers().length===2?LOYAL:1):.5;   // follow-up multiplier: 1.25x with both shadows on the team, 1x with one, 0.5x off the team
+      let dmg=(onTeam?f.dps*t.sp:f.dmg)*(1+.1*stars(id))*(1+M.dmg)*fm*w*(1+e.vuln);
       if(e.boss)dmg*=(f.bossDmg||1)*(1+M.bossDmg);
       dealDmg(e,dmg,t,false);
-      if(!e.dead&&f.dot){const K=DOTS[f.dot];applyDot(e,t,K.x*f.dmg*(1+.1*stars(id))*(1+M.dmg)/K.y*(1+M.dotDmg),K.y*(1+M.dotDur),f.dot)}
+      if(!e.dead&&f.dot){const K=DOTS[f.dot];applyDot(e,t,K.x*f.dmg*(1+.1*stars(id))*(1+M.dmg)*fm/K.y*(1+M.dotDmg),K.y*(1+M.dotDur),f.dot)}   // the DOT scales with the same multiplier
       G.fx.push({k:'line',x1:t.x,y1:t.y,x2:e.x,y2:e.y,t:.15,T:.15,col:'#8a5cff',w:3});
     }
     return;
   }   // Igris/Beru add their own damage (DPS x SJW's attack interval) and DOT to each SJW attack
   if(!SJW_LINE.includes(t.def.id))return;
-  for(const id of followers()){
-    const f=DEF[id],M=modOf(id);let dmg=f.dps*(1+.1*stars(id))*(1+M.dmg)*t.sp*w*(1+e.vuln);
+  const fl=followers(),fm=fl.length===2?LOYAL:1;   // Loyal Shadows: 1.25x follow-up with both shadows on the team
+  for(const id of fl){
+    const f=DEF[id],M=modOf(id);let dmg=f.dps*(1+.1*stars(id))*(1+M.dmg)*fm*t.sp*w*(1+e.vuln);
     if(e.boss)dmg*=(f.bossDmg||1)*(1+M.bossDmg);
     dealDmg(e,dmg,t,false);
-    if(!e.dead&&f.dot){const K=DOTS[f.dot];applyDot(e,t,K.x*f.dmg*(1+.1*stars(id))*(1+M.dmg)/K.y*(1+M.dotDmg),K.y*(1+M.dotDur),f.dot)}
+    if(!e.dead&&f.dot){const K=DOTS[f.dot];applyDot(e,t,K.x*f.dmg*(1+.1*stars(id))*(1+M.dmg)*fm/K.y*(1+M.dotDmg),K.y*(1+M.dotDur),f.dot)}
     G.fx.push({k:'line',x1:t.x,y1:t.y,x2:e.x,y2:e.y,t:.15,T:.15,col:'#8a5cff',w:3});
   }
 }
@@ -2165,7 +2158,7 @@ function buildHotbar(){
 function updateHotbar(){
   $$('#hotbar .slot[data-slot]').forEach(b=>{
     const i=+b.dataset.slot,d=DEF[SAVE.loadout[i]],n=G.towers.filter(t=>t.def.id===d.id).length;
-    b.classList.toggle('sel',G.placing===i);b.classList.toggle('poor',G.yen<costOf(d));b.style.opacity=shadowBound(d.id)?.4:'';
+    b.classList.toggle('sel',G.placing===i);b.classList.toggle('poor',G.yen<costOf(d));b.style.opacity='';
     b.querySelector('.cnt').textContent=n+'/'+maxOf(d);
   });
 }
