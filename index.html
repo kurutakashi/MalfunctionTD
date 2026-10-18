@@ -397,7 +397,7 @@ U('Legendary','sjw2','C-Rank Hunter','SJW evolved','🗡️','dps',900,1.7,125,{
 /* ---------- MYTHIC ---------- */
 U('Mythic','veldora2','Rain Dragon (Named)','Veldora, named','🐉','support',400,1.65,150,{evo:true,aura:{dmg:.3,rng:.15},p:'Support: allies in range deal +30% DMG and get +15% range.',a:[{n:'Storm Calamity',d:'3× DMG to every enemy on the map.',cd:60,u:5,t:'map',m:3}]});
 U('Mythic','yuji2','Crit Merchant','Yuji','💰','dps',2000,2.95,125,{evo:true,crit:[.35,3],critYen:3,p:'Black Flash Merchant: 35% crit for 3× DMG. Each crit pays 3¥.',a:[{n:'Black Flash Barrage',d:'Your next 10 attacks all crit.',cd:40,u:3,t:'crits',hits:10}]});
-U('Mythic','chaein','Chaein','Cha Hae-in','🗡️','dps',2200,3.05,130,{crit:[.4,3],critBoss:1,p:'Monarch Eye: 40% crit for 3× DMG, +100% crit DMG on bosses.',a:[{n:'Dagger Storm',d:'10 strikes of 2× DMG on random enemies.',cd:45,u:4,t:'random',hits:10,m:2}]});
+U('Mythic','chaein','Chaein','Cha Hae-in','🗡️','dps',2300,3.05,130,{crit:[.4,3],critBoss:1,p:'Monarch Eye: 40% crit for 3× DMG, +100% crit DMG on bosses.',a:[{n:'Dagger Storm',d:'10 strikes of 2× DMG on random enemies.',cd:45,u:4,t:'random',hits:10,m:2}]});
 U('Mythic','frieza','Refrigerator','Frieza','🧊','dps',2200,2.45,140,{vuln:.25,p:'Tyrant: enemies in range take +25% DMG from all sources.',a:[{n:'Death Ball',d:'12× DMG to the strongest enemy on the map.',cd:55,u:5,t:'beam',m:12}]});
 U('Mythic','beni2','Oni King (Named)','Benimaru, named','🔥','dps',2400,3.05,135,{evo:true,dot:'burn',p:'Black Flame: hits Burn (50% DMG over 3s).',a:[{n:'Hell Flare',d:'Ignite every enemy on the map with a double-strength Burn.',cd:50,u:4,t:'burn',pct:.8,dur:10}]});
 U('Mythic','gojo','Six-Eyes Teacher','Gojo','🕶️','dps',2800,2.7,150,{auraSlow:.55,p:'Infinity: enemies in range are slowed by 55%',a:[{n:'Limitless Void',d:'Stun every enemy on the map for 3s.',cd:40,u:4,t:'map',stun:3},{n:'Hollow Purple',d:'8× DMG to every enemy on the map.',cd:70,u:5,t:'map',m:8}]});
@@ -406,10 +406,10 @@ U('Mythic','meg2','Shadow Summoner','Megumi, evolved','🌑','dps',2300,2.5,140,
   {n:'Nue',d:'Nue strikes from the sky with 1.6× reach for 15s.',cd:45,u:3,t:'summon',ic:'🦉',cnt:1,m:1.2,sp:1.0,dur:15,rm:1.6},
   {n:'Max Elephant',d:'Max Elephant crashes in: heavy hits that slow enemies 40% for 15s.',cd:55,u:4,t:'summon',ic:'🐘',cnt:1,m:1.0,sp:1.3,dur:15,slow:.4},
   {n:'Mahoraga',d:'Mahoraga adapts: every strike hits 8% harder (up to 40 strikes) for 25s.',cd:90,u:5,t:'summon',ic:'☸️',cnt:1,m:2.5,sp:.8,dur:25,ramp:.05}]});
-U('Mythic','sukuna','Malevolent Chef','Sukuna','🍳','dps',2500,3.0,140,{evo:true,dmgBuff:.45,p:'Sorcery Master: +45% DMG.',
+U('Mythic','sukuna','Malevolent Chef','Sukuna','🍳','dps',2500,3.0,140,{evo:true,dot:'bleed',dmgBuff:.45,p:'Sorcery Master: +45% DMG. Cleave and Dismantle: Applies Bleed (60% DMG over 6s).',
   a:[{n:'Shrine',d:'For 4s, attacks every enemy in range at once with 60% faster attacks.',cd:35,u:5,t:'shrine',dur:4,spa:.4}]});
-U('Mythic','igris','Blood Commander','Igris','🛡️','dps',2200,2.6,125,{noBanner:true,maxPlace:1,dot:'bleed',p:'Bleed: hits cause Bleed (60% DMG over 6s). Empowered by the Shadow Monarch. On a team with the SJW line, follows up every SJW attack.'});
-U('Mythic','beru','Ant King','Beru','🐜','dps',2300,3.0,130,{noBanner:true,maxPlace:1,dot:'poison',p:'Poison: hits poison enemies (80% DMG over 8s). Empowered by the Shadow Monarch. On a team with the SJW line, follows up every SJW attack.'});
+U('Mythic','igris','Blood Commander','Igris','🛡️','dps',3000,2.6,125,{noBanner:true,maxPlace:1,dot:'bleed',p:'Bleed: hits cause Bleed (60% DMG over 6s). Empowered by the Shadow Monarch. On a team with the SJW line, follows up every SJW attack.'});
+U('Mythic','beru','Ant King','Beru','🐜','dps',3000,3.0,130,{noBanner:true,maxPlace:1,dot:'poison',p:'Poison: hits poison enemies (80% DMG over 8s). Empowered by the Shadow Monarch. On a team with the SJW line, follows up every SJW attack.'});
 U('Mythic','sjw3','A-Rank Hunter','SJW evolved','⚔️','dps',2400,3.0,130,{evo:true,maxPlace:1,grow:{kill:.02,cap:3},dot:'poison',p:'Poison: hits poison enemies (80% DMG over 8s).'});
 
 /* ---------- SECRET ---------- */
@@ -559,7 +559,7 @@ function famOf(id){while(EVO_FROM[id]&&EVO[EVO_FROM[id]].length===1)id=EVO_FROM[
 function clash(team,id){return team.some(x=>x!==id&&(famOf(x)===famOf(id)||(FUSE[x]||[]).includes(id)||(FUSE[id]||[]).includes(x)))}
 const THEME={dmg:.10,spa:.05};   // buff for a Theme Team (slots 1-5 share a Tag)
 function themeOf(L){const f=L.slice(0,5);if(f.length<5||f.some(id=>!DEF[id]))return null;return DEF[f[0]].tags.find(t=>f.every(id=>DEF[id].tags.includes(t)))||null}
-const VERSE={dmg:.15,spa:.10};   // buff for a Verse Team (slots 1-5 share an anime-universe Tag): a bigger Theme Team
+const VERSE={dmg:.2,spa:.15};   // buff for a Verse Team (slots 1-5 share an anime-universe Tag): a bigger Theme Team
 const VERSES=['Solo Leveling','Bleach','One Piece','Jujutsu Kaisen','Dragon Ball','Tensura','Hunter x Hunter','Naruto','Black Clover','Re:Zero','One-Punch Man'];   // the anime-universe Tags (every unit lists its anime first)
 const verseOfUnit=u=>VERSES.find(v=>u.tags.includes(v))||null;
 function verseOf(L){const f=L.slice(0,5);if(f.length<5||f.some(id=>!DEF[id]))return null;return VERSES.find(v=>f.every(id=>DEF[id].tags.includes(v)))||null}
