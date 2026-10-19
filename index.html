@@ -305,17 +305,17 @@ window.MUSIC_META={"story_t": {"frames": 661500, "rate": 44100}, "raids_n": {"fr
 
 <script>
 'use strict';
-/* FILE MAP (search for these banners): DATA (units, tags, items, maps, System paths) / SAVE & STATE / HELPERS + SOUND / LOBBY UI (+ summon, units, system popup) / GAME ENGINE (waves, towers, combat) / IN-GAME UI. Tunable numbers: THEME, AOE_FALL, DOTS, BANCOST, FEAT_W, cost/placement block under 'Cost and placement limits'. */
+/* FILE MAP (search for these banners): DATA (units, tags, items, maps, System paths) / SAVE & STATE / HELPERS + SOUND / LOBBY UI (+ summon, units, system popup) / GAME ENGINE (waves, towers, combat) / IN-GAME UI. Tunable numbers: THEME, AOE_FALL, DOTS, BANCOST, FEAT_W, per-unit stats (dmg, spa, rng, cost, max placed, splash) in each U(...) line. */
 /* =====================================================================
    DATA  — edit this section to add units, maps, items and upgrades
    ===================================================================== */
 const RAR={
-  Rare:     {c:'#4aa3ff',cost:200, max:5,rate:60},
-  Epic:     {c:'#b06cff',cost:450, max:4,rate:28},
-  Legendary:{c:'#ffb23e',cost:1000,max:3,rate:9},
-  Mythic:   {c:'#ff4d6d',cost:2200,max:2,rate:2.5},
-  Secret:   {c:'#2ef0c8',cost:4000,max:1,rate:0.5},
-  Malfunction:{c:'#ff2bd6',cost:6000,max:1,rate:0}
+  Rare:     {c:'#4aa3ff',rate:60},
+  Epic:     {c:'#b06cff',rate:28},
+  Legendary:{c:'#ffb23e',rate:9},
+  Mythic:   {c:'#ff4d6d',rate:2.5},
+  Secret:   {c:'#2ef0c8',rate:0.5},
+  Malfunction:{c:'#ff2bd6',rate:0}
 };
 const RN=Object.keys(RAR);
 
@@ -327,104 +327,103 @@ const RN=Object.keys(RAR);
    ACTIVES (a:[...]): n, d, cd, u = upgrade level that unlocks it (1-5),
      t = nova|map|freeze|buff|beam|heal|cash|burn|random|crits|dotblast|summon  (+ m, stun, dur, rm, n, pct, amt, ic, cnt, sp, slow, ramp) */
 const UNITS=[];
-/* 7th number = RAW DAMAGE PER HIT (the release numbers from the design doc), 8th = SPA (seconds per attack).
-   DPS is derived (damage / SPA). RULE: higher raw damage = slower SPA, roughly SPA = 0.65 x (damage/100)^0.43,
-   then nudged: faster for light fast hitters, slower for crit / DOT / multi-hit / support / farm units. */
-/* ATTACK SPEED RULE: seconds-per-attack comes from raw damage, never from the unit line itself (the 8th number in each U(...) is ignored).
-   100 dmg = 2s, rising smoothly to 12s at 7,500 dmg, so weak hitters swing often and heavy hitters rarely. Give a unit {spa:1.2} in its
-   trait object to override it. Melee units (see isMelee) then attack 15% faster (MELEE_SPA). (reserved for the future "fastest units", e.g. Minato). */
+/* UNIT STATS ARE MANUAL: nothing is derived from rarity (or from damage) any more. Every U(...) line reads:
+     U(rarity, id, name, ref, emoji, role, DMG, SPA, RNG, COST, MAX, AOE, {traits})
+   DMG  = raw damage per hit            SPA = seconds per attack (cooldown)         RNG = range in px
+   COST = ¥ to place the unit (before the 'cheap' trait)      MAX = most copies that can be placed at once
+   AOE  = {r: splash radius in px, n: max enemies hit per attack}. {r:0,n:1} = single target; add all:true (n:99) to hit every enemy in range.
+   DPS is simply DMG / SPA. Rarity only controls the colour, banner rates and pulls. Edit the numbers right in each unit's line. */
 const SINGLE=['sjw','sjw2','sjw3','sjw4','sjw5','ichi','ichi2','goku','yuji','yuji2','kakashi','gon','meg','koby','gobta','chad','uryu','chaein','nobara','subaru','subaru2','igris','beru','saitama','garou','mumen'];   // melee units (hit one enemy)
-const MELEE_SPA=.85;   // melee units (SINGLE list + pierce units like Zoro) attack 15% faster than their raw damage would give them
 const isMelee=d=>SINGLE.includes(d.id)||!!d.pierce;
-function spaFor(dmg){return Math.round(Math.min(12,Math.max(2,2+10*Math.log(dmg/100)/Math.log(75)))*20)/20}
-function U(r,id,n,ref,ic,role,dmg,spa,rng,x){const sp0=(x&&x.spa)||spaFor(dmg),sp=isMelee({id,pierce:x&&x.pierce})?Math.round(sp0*MELEE_SPA*20)/20:sp0;UNITS.push(Object.assign({r,id,n,ref,ic,role,dmg,dps:dmg/sp,spa:sp,rng,a:[],p:''},x||{}))}
+function U(r,id,n,ref,ic,role,dmg,spa,rng,cost,max,aoe,x){UNITS.push(Object.assign({r,id,n,ref,ic,role,dmg,dps:dmg/spa,spa,rng,cost,maxPlace:max,aoe,a:[],p:''},x||{}))}
 
 /* ---------- RARE ---------- */
-U('Rare','sjw','E-Rank Hunter','Sung JinWoo','🗡️','dps',150,0.6,120,{noBanner:true,maxPlace:3,grow:{kill:.02, cap:3},p:'Grinder: +2% DMG per kill (Max 300%).'});
-U('Rare','ichi','Medium High Schooler','Ichigo Kurosaki','🍊','dps',120,0.7,110,{bossDmg:1.25,p:'Strawberry Rage: +25% DMG to bosses.'});
-U('Rare','gumman','Gumman','Monkey D. Luffy','🧤','dps',110,0.8,115,{pierce:2,p:'Rubber Barrage: hits 2 enemies at once.'});
-U('Rare','nami','Navigator','Nami','🌦️','farm',60,0.8,100,{income:100,p:'Treasure Map: +100¥ at the end of every wave (grows with level).'});
-U('Epic','meg','Potential Man','Megumi Fushiguro','🐕','dps',260,0.65,125,{grow:{lvl:.12},p:'Late Bloomer: +12% DMG per upgrade level.'});
-U('Rare','goku','Monkey Kid','Young Goku','🐵','dps',100,0.55,105,{dbl:.15,p:'Tail Spin: 15% chance to hit twice.'});
-U('Rare','gobta','Goba','Gobta','👺','dps',100,0.6,110,{cheap:.25,p:'Cheap Labor: costs 25% less.'});
-U('Rare','kon','King of NY','Kon','🦁','support',50,0.7,140,{aura:{dmg:.2},p:'Support: allies in range deal +20% DMG.'});
-U('Rare','gon','Gone','Gon Freecss','🎣','dps',110,0.8,115,{nth:[4,3],p:'Jajanken: every 4th attack deals 3× damage.'});
-U('Rare','slime','Slime','Rimuru Tempest','💧','dps',105,0.65,115,{noBanner:true,slow:[.25,2],p:'Sticky Goo: hits slow enemies by 25% for 2s.'});
-U('Rare','koby','Pink-Haired Recruit','Koby','⚓','dps',100,0.65,115,{grow:{wave:.02,cap:.5},p:'Rookie Marine: +2% DMG per wave survived (max +50%).'});
+U('Rare','sjw','E-Rank Hunter','Sung JinWoo','🗡️','dps',150,2.5,120,320,3,{r:0,n:1},{noBanner:true,grow:{kill:.02, cap:3},p:'Grinder: +2% DMG per kill (Max 300%).'});
+U('Rare','ichi','Medium High Schooler','Ichigo Kurosaki','🍊','dps',120,2.05,110,205,5,{r:0,n:1},{bossDmg:1.25,p:'Strawberry Rage: +25% DMG to bosses.'});
+U('Rare','gumman','Gumman','Monkey D. Luffy','🧤','dps',110,1.85,115,190,5,{r:40,n:2},{pierce:2,p:'Rubber Barrage: hits 2 enemies at once.'});
+U('Rare','nami','Navigator','Nami','🌦️','farm',60,2,100,200,5,{r:0,n:1},{income:100,p:'Treasure Map: +100¥ at the end of every wave (grows with level).'});
+U('Epic','meg','Potential Man','Megumi Fushiguro','🐕','dps',260,3.55,125,475,4,{r:0,n:1},{grow:{lvl:.12},p:'Late Bloomer: +12% DMG per upgrade level.'});
+U('Rare','goku','Monkey Kid','Young Goku','🐵','dps',100,1.7,105,180,5,{r:0,n:1},{dbl:.15,p:'Tail Spin: 15% chance to hit twice.'});
+U('Rare','gobta','Goba','Gobta','👺','dps',100,1.7,110,180,5,{r:0,n:1},{cheap:.25,p:'Cheap Labor: costs 25% less.'});
+U('Rare','kon','King of NY','Kon','🦁','support',50,2,140,200,4,{r:0,n:1},{aura:{dmg:.2},p:'Support: allies in range deal +20% DMG.'});
+U('Rare','gon','Gone','Gon Freecss','🎣','dps',110,1.85,115,190,5,{r:0,n:1},{nth:[4,3],p:'Jajanken: every 4th attack deals 3× damage.'});
+U('Rare','slime','Slime','Rimuru Tempest','💧','dps',105,2.1,115,185,5,{r:0,n:1},{noBanner:true,slow:[.25,2],p:'Sticky Goo: hits slow enemies by 25% for 2s.'});
+U('Rare','koby','Pink-Haired Recruit','Koby','⚓','dps',100,1.7,115,200,5,{r:0,n:1},{grow:{wave:.02,cap:.5},p:'Rookie Marine: +2% DMG per wave survived (max +50%).'});
 
 /* ---------- EPIC ---------- */
-U('Epic','ichi2','Medium Shinigami','Ichigo Kurosaki','⚔️','dps',300,1.05,130,{evo:true,bossDmg:1.25,p:'Strawberry Rage: +25% DMG to bosses.',a:[{n:'Getsuga',d:'4× DMG to every enemy in range.',cd:35,u:3,t:'nova',m:4}]});
-U('Epic','rigurd','Goblin Chief','Rigurd','👑','support',250,0.9,140,{aura:{spa:.15,dmg:.1},p:'Support: allies in range attack 15% faster and deal +10% DMG.'});
-U('Epic','chad','Gigachud','Yasutora Sado','🗿','dps',300,1.0,100,{hp:300,auraSlow:.15,p:'Giant Presence: Applies 15% slow to all enemies in range. 3x Health.',a:[{n:'Brazo Derecho Del Gigante',d:'5× DMG to every non-boss enemy in range.',cd:60,u:3,t:'nbnova',m:5}]});
-U('Epic','rukia','Ice Damsel','Rukia Kuchiki','❄️','dps',280,1.1,135,{freeze:[.15,3],p:'Frostbite: 15% chance to Freeze (no movement for 3s, then 10% slower for 10s).',a:[{n:'Snow Dance',d:'Freeze every enemy in range.',cd:45,u:3,t:'freeze'}]});
-U('Epic','zoro','Ssolo','Roronoa Zoro','🌀','dps',320,1.3,125,{pierce:3,p:'Three-Sword Style: hits 3 enemies at once.',a:[{n:'Asura',d:'+100% DMG for 10s.',cd:40,u:3,t:'buff',dmg:1,dur:10}]});
-U('Epic','pic','Aura Farmer','Piccolo','👽','dps',300,1.35,140,{income:30,p:'Namekian Hustle: +30¥ at the end of every wave.',a:[{n:'Special Beam',d:'8× DMG to the strongest enemy on the map.',cd:35,u:4,t:'beam',m:8}]});
-U('Epic','ranga','Dire Dog','Ranga','🐺','dps',250,0.8,120,{fastDmg:1.3,p:'Hunter: +30% DMG to fast enemies.'});
-U('Epic','orihime','Bread','Orihime Inoue','🍞','support',150,0.9,150,{heal:.04,cleanse:true,aura:{dmg:.1},p:'Support: heals allies in range 4% max HP/s, +10% DMG aura, and wears off stuns and debuffs 3× faster.',a:[{n:'Soten Kisshun',d:'Heal and revive every unit to full HP and cleanse all debuffs.',cd:30,u:3,t:'heal'}]});
-U('Epic','puri','Grape','Puri-Puri-Prisoner','🍇','dps',270,1.1,120,{hp:200,pulse:[5,1.2],p:'Unwanted Attention: every 5s, stuns enemies in range for 1.2s. 2× HP.'});
-U('Epic','nobara','Nails','Nobara Kugisaki','🔨','dps',260,1.2,135,{dot:'bleed',p:'Straw Doll: hits cause Bleed (60% DMG over 6s).',a:[{n:'Resonance',d:'6× DMG to every bleeding enemy on the map.',cd:30,u:3,t:'dotblast',m:6}]});
-U('Epic','subaru','Pleiades','Subaru Natsuki','🔄','dps',280,1.0,125,{hp:150,maxPlace:1,rbd:.005,p:'RBD: for each % of Tower HP missing, attack 0.5% faster. Limited to 1 placement.',a:[{n:'Return by Death',d:'Restore to full HP and +100% DMG for 8s.',cd:45,u:3,t:'buff',dmg:1,dur:8,heal:true}]});
-U('Epic','yojin','Pest','Yoo Jinho','🌾','farm',300,1.45,120,{income:250, maxPlace:2,p:'Harvest Season: +110¥ at the end of every wave (grows with level).',a:[{n:'Harvest',d:'Instantly gain 300¥.',cd:60,u:4,t:'cash',amt:300}]});
-U('Epic','uryu','Glasses Archer','Uryu Ishida','🏹','dps',290,1.25,160,{crit:[.2,2.2],p:'Quincy Precision: 20% crit for 2.2× DMG. Long range.',a:[{n:'Licht Regen',d:'8 strikes of 1.5× DMG on random enemies.',cd:40,u:3,t:'random',hits:8,m:1.5}]});
-U('Epic','ace','Fire Fist','Portgas D. Ace','☄️','dps',300,1.25,125,{dot:'burn',p:'Flame Body: hits Burn (50% DMG over 3s).',a:[{n:'Hiken',d:'4× DMG to every enemy within 1.3× range.',cd:35,u:3,t:'nova',m:4,rm:1.3}]});
-U('Epic','kakashi','Copy Ninja','Kakashi Hatake','🎭','dps',280,1.2,130,{nth:[3,2.5],p:'Copy: every 3rd attack deals 2.5× damage.',a:[{n:'Lightning Blade',d:'6× DMG to the strongest enemy on the map.',cd:35,u:3,t:'beam',m:6}]});
-U('Epic','gobta2','Goba (Named)','Gobta','👺','dps',280,0.95,115,{evo:true,cheap:.3,dmgBuff:.2,p:'Cheap Labor: costs 30% less. Named: +20% DMG.'});
+U('Epic','ichi2','Medium Shinigami','Ichigo Kurosaki','⚔️','dps',300,3.85,130,470,4,{r:0,n:1},{evo:true,bossDmg:1.25,p:'Strawberry Rage: +25% DMG to bosses.',a:[{n:'Getsuga',d:'4× DMG to every enemy in range.',cd:35,u:3,t:'nova',m:4}]});
+U('Epic','rigurd','Goblin Chief','Rigurd','👑','support',250,4.1,140,450,3,{r:26,n:2},{aura:{spa:.15,dmg:.1},p:'Support: allies in range attack 15% faster and deal +10% DMG.'});
+U('Epic','chad','Gigachud','Yasutora Sado','🗿','dps',300,3.85,100,470,4,{r:0,n:1},{hp:300,auraSlow:.15,p:'Giant Presence: Applies 15% slow to all enemies in range. 3x Health.',a:[{n:'Brazo Derecho Del Gigante',d:'5× DMG to every non-boss enemy in range.',cd:60,u:3,t:'nbnova',m:5}]});
+U('Epic','rukia','Ice Damsel','Rukia Kuchiki','❄️','dps',280,4.4,135,450,4,{r:26,n:2},{freeze:[.15,3],p:'Frostbite: 15% chance to Freeze (no movement for 3s, then 10% slower for 10s).',a:[{n:'Snow Dance',d:'Freeze every enemy in range.',cd:45,u:3,t:'freeze'}]});
+U('Epic','zoro','Ssolo','Roronoa Zoro','🌀','dps',320,4,125,495,4,{r:40,n:3},{pierce:3,p:'Three-Sword Style: hits 3 enemies at once.',a:[{n:'Asura',d:'+100% DMG for 10s.',cd:40,u:3,t:'buff',dmg:1,dur:10}]});
+U('Epic','pic','Aura Farmer','Piccolo','👽','dps',300,4.55,140,470,4,{r:26,n:2},{income:30,p:'Namekian Hustle: +30¥ at the end of every wave.',a:[{n:'Special Beam',d:'8× DMG to the strongest enemy on the map.',cd:35,u:4,t:'beam',m:8}]});
+U('Epic','ranga','Dire Dog','Ranga','🐺','dps',250,4.1,120,415,4,{r:26,n:2},{fastDmg:1.3,p:'Hunter: +30% DMG to fast enemies.'});
+U('Epic','orihime','Bread','Orihime Inoue','🍞','support',150,2.95,150,450,3,{r:26,n:2},{heal:.04,cleanse:true,aura:{dmg:.1},p:'Support: heals allies in range 4% max HP/s, +10% DMG aura, and wears off stuns and debuffs 3× faster.',a:[{n:'Soten Kisshun',d:'Heal and revive every unit to full HP and cleanse all debuffs.',cd:30,u:3,t:'heal'}]});
+U('Epic','puri','Grape','Puri-Puri-Prisoner','🍇','dps',270,4.3,120,440,4,{r:26,n:2},{hp:200,pulse:[5,1.2],p:'Unwanted Attention: every 5s, stuns enemies in range for 1.2s. 2× HP.'});
+U('Epic','nobara','Nails','Nobara Kugisaki','🔨','dps',260,3.55,135,425,4,{r:0,n:1},{dot:'bleed',p:'Straw Doll: hits cause Bleed (60% DMG over 6s).',a:[{n:'Resonance',d:'6× DMG to every bleeding enemy on the map.',cd:30,u:3,t:'dotblast',m:6}]});
+U('Epic','subaru','Pleiades','Subaru Natsuki','🔄','dps',280,3.75,125,450,1,{r:0,n:1},{hp:150,rbd:.005,p:'RBD: for each % of Tower HP missing, attack 0.5% faster. Limited to 1 placement.',a:[{n:'Return by Death',d:'Restore to full HP and +100% DMG for 8s.',cd:45,u:3,t:'buff',dmg:1,dur:8,heal:true}]});
+U('Epic','yojin','Pest','Yoo Jinho','🌾','farm',300,4.55,120,400,2,{r:0,n:1},{income:250,p:'Harvest Season: +110¥ at the end of every wave (grows with level).',a:[{n:'Harvest',d:'Instantly gain 300¥.',cd:60,u:4,t:'cash',amt:300}]});
+U('Epic','uryu','Glasses Archer','Uryu Ishida','🏹','dps',290,3.8,160,460,4,{r:0,n:1},{crit:[.2,2.2],p:'Quincy Precision: 20% crit for 2.2× DMG. Long range.',a:[{n:'Licht Regen',d:'8 strikes of 1.5× DMG on random enemies.',cd:40,u:3,t:'random',hits:8,m:1.5}]});
+U('Epic','ace','Fire Fist','Portgas D. Ace','☄️','dps',300,4.55,125,470,4,{r:26,n:2},{dot:'burn',p:'Flame Body: hits Burn (50% DMG over 3s).',a:[{n:'Hiken',d:'4× DMG to every enemy within 1.3× range.',cd:35,u:3,t:'nova',m:4,rm:1.3}]});
+U('Epic','kakashi','Copy Ninja','Kakashi Hatake','🎭','dps',280,3.75,130,450,4,{r:0,n:1},{nth:[3,2.5],p:'Copy: every 3rd attack deals 2.5× damage.',a:[{n:'Lightning Blade',d:'6× DMG to the strongest enemy on the map.',cd:35,u:3,t:'beam',m:6}]});
+U('Epic','gobta2','Goba (Named)','Gobta','👺','dps',280,4.4,115,450,4,{r:26,n:2},{evo:true,cheap:.3,dmgBuff:.2,p:'Cheap Labor: costs 30% less. Named: +20% DMG.'});
 
 /* ---------- LEGENDARY ---------- */
-U('Legendary','yami','Bull Captain','Yami Sukehiro','🐂','dps',900,1.65,130,{bossDmg:1.5,p:'Dark Zone: +50% DMG to bosses.',a:[{n:'Black Slash',d:'6× DMG to every enemy in range.',cd:40,u:3,t:'nova',m:6}]});
-U('Legendary','veg','Vegetable','Vegeta','🥦','dps',850,1.65,135,{grow:{wave:.03,cap:.6},rival:{ids:['goku','goku2'],dmg:.3},p:'Saiyan Pride: +3% DMG per wave survived (max +60%). Saiyan Rivalry: if Monkey Kid or Super Monkey is in range, +30% DMG to both units.',a:[{n:'Final Flash',d:'10× DMG to the strongest enemy on the map.',cd:50,u:5,t:'beam',m:10}]});
-U('Legendary','goku2','Super Monkey','Son Goku','🐒','dps',1000,1.75,135,{evo:true,zen:{per:.2, cap:0.5},p:'Zenkai: each kill makes attacks 2% faster (max 50%).',a:[{n:'Kamehameha',d:'5× DMG to every enemy within 1.6× range.',cd:45,u:3,t:'nova',m:5,rm:1.6},{n:'Super Saiyan',d:'Transform for 25s: 2× DMG, 15% faster, +15% range (Mythic-tier power).',cd:90,u:5,t:'transform',dur:25,dmg:2,spa:.85,rng:1.15}]});
-U('Legendary','urahara','Candy Shop Owner','Kisuke Urahara','🎩','support',400,1.55,140,{income:100,aura:{rng:.15,dmg:.1},p:'Support + Farm: allies in range get +15% range and +10% DMG. +100¥ per wave.'});
-U('Legendary','finger','Finger Holder','Finger Bearer','🫵','dps',800,1.6,125,{grow:{wave:.08,cap:1.6},p:'Twenty Fingers: +8% DMG per wave survived (max +160%).'});
-U('Legendary','yuji','Superhuman High Schooler','Yuji Itadori','👊','dps',800,1.9,110,{dbl:.25,p:'Divergent Fist: 25% chance to hit twice.'});
-U('Legendary','naruto','Orange Ninja','Naruto Uzumaki','🍥','dps',850,1.95,125,{hp:150,pierce:3,p:'Shadow Clones: hits 3 enemies at once.',a:[{n:'Sage Mode',d:'+120% DMG for 12s.',cd:60,u:4,t:'buff',dmg:1.2,dur:12}]});
-U('Legendary','garp','Marine Hero','Monkey D. Garp','🪖','dps',900,1.85,115,{hp:300,bossDmg:1.3,p:'Fist of Love: +30% DMG to bosses. 3× HP.',a:[{n:'Galaxy Impact',d:'5× DMG to every enemy within 1.2× range.',cd:45,u:4,t:'nova',m:5,rm:1.2}]});
-U('Legendary','subaru2','Amazing Guy','Subaru Natsuki','🔄','support',850,1.65,130,{evo:true,hp:250,maxPlace:1,lionheart:true,rbd:.004,rbdDmg:.004,rbdAlly:.002,
+U('Legendary','yami','Bull Captain','Yami Sukehiro','🐂','dps',900,7.1,130,1000,3,{r:34,n:3},{bossDmg:1.5,p:'Dark Zone: +50% DMG to bosses.',a:[{n:'Black Slash',d:'6× DMG to every enemy in range.',cd:40,u:3,t:'nova',m:6}]});
+U('Legendary','veg','Vegetable','Vegeta','🥦','dps',850,6.95,135,1100,3,{r:34,n:3},{grow:{wave:.03,cap:.6},rival:{ids:['goku','goku2'],dmg:.3},p:'Saiyan Pride: +3% DMG per wave survived (max +60%). Saiyan Rivalry: if Monkey Kid or Super Monkey is in range, +30% DMG to both units.',a:[{n:'Final Flash',d:'10× DMG to the strongest enemy on the map.',cd:50,u:5,t:'beam',m:10}]});
+U('Legendary','goku2','Super Monkey','Son Goku','🐒','dps',1000,7.35,135,1075,3,{r:34,n:3},{evo:true,zen:{per:.2, cap:0.5},p:'Zenkai: each kill makes attacks 2% faster (max 50%).',a:[{n:'Kamehameha',d:'5× DMG to every enemy within 1.6× range.',cd:45,u:3,t:'nova',m:5,rm:1.6},{n:'Super Saiyan',d:'Transform for 25s: 2× DMG, 15% faster, +15% range (Mythic-tier power).',cd:90,u:5,t:'transform',dur:25,dmg:2,spa:.85,rng:1.15}]});
+U('Legendary','urahara','Candy Shop Owner','Kisuke Urahara','🎩','support',400,5.2,140,1000,2,{r:34,n:3},{income:100,aura:{rng:.15,dmg:.1},p:'Support + Farm: allies in range get +15% range and +10% DMG. +100¥ per wave.'});
+U('Legendary','finger','Finger Holder','Finger Bearer','🫵','dps',800,6.8,125,1255,2,{r:34,n:3},{grow:{wave:.08,cap:1.6},p:'Twenty Fingers: +8% DMG per wave survived (max +160%).'});
+U('Legendary','yuji','Superhuman High Schooler','Yuji Itadori','👊','dps',800,5.8,110,920,3,{r:0,n:1},{dbl:.25,p:'Divergent Fist: 25% chance to hit twice.'});
+U('Legendary','naruto','Orange Ninja','Naruto Uzumaki','🍥','dps',850,5.9,125,960,3,{r:40,n:3},{hp:150,pierce:3,p:'Shadow Clones: hits 3 enemies at once.',a:[{n:'Sage Mode',d:'+120% DMG for 12s.',cd:60,u:4,t:'buff',dmg:1.2,dur:12}]});
+U('Legendary','garp','Marine Hero','Monkey D. Garp','🪖','dps',900,7.1,115,1000,3,{r:34,n:3},{hp:300,bossDmg:1.3,p:'Fist of Love: +30% DMG to bosses. 3× HP.',a:[{n:'Galaxy Impact',d:'5× DMG to every enemy within 1.2× range.',cd:45,u:4,t:'nova',m:5,rm:1.2}]});
+U('Legendary','subaru2','Amazing Guy','Subaru Natsuki','🔄','support',850,5.9,130,1000,1,{r:0,n:1},{evo:true,hp:250,lionheart:true,rbd:.004,rbdDmg:.004,rbdAlly:.002,
   p:'RBD: for each % of Tower HP missing, attacks 0.4% faster and deals +0.4% DMG. Allies in range attack 0.2% faster per % missing (max 30%). Limited to 1 placement.',
   a:[{n:'Lion Heart',d:'Choose an ally. They are immune to status effects and take only 25% of damage; Subaru takes the other 75%. Lasts until you pick a new unit, turn it off, or Subaru is down.',cd:0,u:3,t:'lionheart'}]});
-U('Legendary','veldora','Rain Dragon','Veldora','🐉','support',300,1.5,145,{aura:{dmg:.2,rng:.1},p:'Support: allies in range deal +20% DMG and get +10% range. Needs a name to unlock its full power.',a:[{n:'Storm Breath',d:'3× DMG to every enemy in range.',cd:45,u:4,t:'nova',m:3}]});
-U('Legendary','beni','Ogre King','Benimaru','🔥','dps',850,1.95,130,{dot:'burn',p:'Black Flame: hits Burn (50% DMG over 3s). Needs a name to unlock its full power.',a:[{n:'Flame Burst',d:'5× DMG to every enemy within 1.2× range.',cd:40,u:4,t:'nova',m:5,rm:1.2}]});
-U('Legendary','rigurd2','Hobgoblin Chief (Named)','Rigurd','👑','support',400,1.55,145,{evo:true,aura:{spa:.2,dmg:.15,rng:.1},p:'Support: allies in range attack 20% faster, deal +15% DMG and get +10% range.'});
-U('Legendary','ranga2','Storm Dog (Named)','Ranga','🐺','dps',800,1.35,125,{evo:true,fastDmg:1.5,auraSlow:.15,p:'Hunter: +50% DMG to fast enemies. Storm Pack: enemies in range are 15% slower.'});
-U('Legendary','yojin2','Ahjin CEO','Yoo Jinho','💼','farm',450,1.7,125,{evo:true,maxPlace:1,income:500,p:'Corporate Takeover: +500¥ at the end of every wave (grows with level). Limited to 1 placement.',a:[{n:'Quarterly Bonus',d:'Instantly gain 1,200¥.',cd:60,u:4,t:'cash',amt:1200}]});
-U('Legendary','sjw2','C-Rank Hunter','Sung Jinwoo','🗡️','dps',900,1.7,125,{evo:true,maxPlace:1,grow:{kill:.02,cap:3},dot:'bleed',p:'Bleed: hits cause Bleed (60% DMG over 6s).'});
+U('Legendary','veldora','Rain Dragon','Veldora','🐉','support',300,4.55,145,1000,2,{r:34,n:3},{aura:{dmg:.2,rng:.1},p:'Support: allies in range deal +20% DMG and get +10% range. Needs a name to unlock its full power.',a:[{n:'Storm Breath',d:'3× DMG to every enemy in range.',cd:45,u:4,t:'nova',m:3}]});
+U('Legendary','beni','Ogre King','Benimaru','🔥','dps',850,6.95,130,960,3,{r:34,n:3},{dot:'burn',p:'Black Flame: hits Burn (50% DMG over 3s). Needs a name to unlock its full power.',a:[{n:'Flame Burst',d:'5× DMG to every enemy within 1.2× range.',cd:40,u:4,t:'nova',m:5,rm:1.2}]});
+U('Legendary','rigurd2','Hobgoblin Chief (Named)','Rigurd','👑','support',400,5.2,145,1000,2,{r:34,n:3},{evo:true,aura:{spa:.2,dmg:.15,rng:.1},p:'Support: allies in range attack 20% faster, deal +15% DMG and get +10% range.'});
+U('Legendary','ranga2','Storm Dog (Named)','Ranga','🐺','dps',800,6.8,125,920,3,{r:34,n:3},{evo:true,fastDmg:1.5,auraSlow:.15,p:'Hunter: +50% DMG to fast enemies. Storm Pack: enemies in range are 15% slower.'});
+U('Legendary','yojin2','Ahjin CEO','Yoo Jinho','💼','farm',450,5.5,125,400,1,{r:0,n:1},{evo:true,income:500,p:'Corporate Takeover: +500¥ at the end of every wave (grows with level). Limited to 1 placement.',a:[{n:'Quarterly Bonus',d:'Instantly gain 1,200¥.',cd:60,u:4,t:'cash',amt:1200}]});
+U('Legendary','sjw2','C-Rank Hunter','Sung Jinwoo','🗡️','dps',900,6.05,125,1600,1,{r:0,n:1},{evo:true,grow:{kill:.02,cap:3},dot:'bleed',p:'Bleed: hits cause Bleed (60% DMG over 6s).'});
 
 /* ---------- MYTHIC ---------- */
-U('Mythic','veldora2','Rain Dragon (Named)','Veldora','🐉','support',400,1.65,150,{evo:true,aura:{dmg:.3,rng:.15},p:'Support: allies in range deal +30% DMG and get +15% range.',a:[{n:'Storm Calamity',d:'3× DMG to every enemy on the map.',cd:60,u:5,t:'map',m:3}]});
-U('Mythic','yuji2','Crit Merchant','Yuji Itadori','💰','dps',2000,2.95,125,{evo:true,crit:[.35,3],critYen:3,p:'Black Flash Merchant: 35% crit for 3× DMG. Each crit pays 3¥.',a:[{n:'Black Flash Barrage',d:'Your next 10 attacks all crit.',cd:40,u:3,t:'crits',hits:10}]});
-U('Mythic','chaein','Chaein','Cha Hae-in','🗡️','dps',2300,3.05,130,{crit:[.4,3],critBoss:1,p:'Monarch Eye: 40% crit for 3× DMG, +100% crit DMG on bosses.',a:[{n:'Dagger Storm',d:'10 strikes of 2× DMG on random enemies.',cd:45,u:4,t:'random',hits:10,m:2}]});
-U('Mythic','frieza','Refrigerator','Frieza','🧊','dps',2200,2.45,140,{vuln:.25,p:'Tyrant: enemies in range take +25% DMG from all sources.',a:[{n:'Death Ball',d:'12× DMG to the strongest enemy on the map.',cd:55,u:5,t:'beam',m:12}]});
-U('Mythic','beni2','Kijin King (Named)','Benimaru','🔥','dps',2400,3.05,135,{evo:true,dot:'burn',p:'Black Flame: hits Burn (50% DMG over 3s).',a:[{n:'Hell Flare',d:'Ignite every enemy on the map with a double-strength Burn.',cd:50,u:4,t:'burn',pct:.8,dur:10}]});
-U('Mythic','gojo','Six-Eyes Teacher','Satoru Gojo','🕶️','dps',2800,2.7,150,{auraSlow:.55,p:'Infinity: enemies in range are slowed by 55%',a:[{n:'Limitless Void',d:'Stun every enemy on the map for 3s.',cd:40,u:4,t:'map',stun:3},{n:'Hollow Purple',d:'8× DMG to every enemy on the map.',cd:70,u:5,t:'map',m:8}]});
-U('Mythic','meg2','Shadow Summoner','Megumi Fushiguro','🌑','dps',2300,2.5,140,{evo:true,grow:{lvl:.12},p:'Ten Shadows: +12% DMG per upgrade level. Every upgrade awakens a new shikigami.',a:[
+U('Mythic','veldora2','Rain Dragon (Named)','Veldora','🐉','support',400,5.2,150,2200,1,{r:44,n:5},{evo:true,aura:{dmg:.3,rng:.15},p:'Support: allies in range deal +30% DMG and get +15% range.',a:[{n:'Storm Calamity',d:'3× DMG to every enemy on the map.',cd:60,u:5,t:'map',m:3}]});
+U('Mythic','yuji2','Crit Merchant','Yuji Itadori','💰','dps',2000,7.6,125,1790,2,{r:0,n:1},{evo:true,crit:[.35,3],critYen:3,p:'Black Flash Merchant: 35% crit for 3× DMG. Each crit pays 3¥.',a:[{n:'Black Flash Barrage',d:'Your next 10 attacks all crit.',cd:40,u:3,t:'crits',hits:10}]});
+U('Mythic','chaein','Chaein','Cha Hae-in','🗡️','dps',2300,7.85,130,1975,2,{r:0,n:1},{crit:[.4,3],critBoss:1,p:'Monarch Eye: 40% crit for 3× DMG, +100% crit DMG on bosses.',a:[{n:'Dagger Storm',d:'10 strikes of 2× DMG on random enemies.',cd:45,u:4,t:'random',hits:10,m:2}]});
+U('Mythic','frieza','Refrigerator','Frieza','🧊','dps',2200,9.15,140,1915,2,{r:44,n:5},{vuln:.25,p:'Tyrant: enemies in range take +25% DMG from all sources.',a:[{n:'Death Ball',d:'12× DMG to the strongest enemy on the map.',cd:55,u:5,t:'beam',m:12}]});
+U('Mythic','beni2','Kijin King (Named)','Benimaru','🔥','dps',2400,9.35,135,2035,2,{r:44,n:5},{evo:true,dot:'burn',p:'Black Flame: hits Burn (50% DMG over 3s).',a:[{n:'Hell Flare',d:'Ignite every enemy on the map with a double-strength Burn.',cd:50,u:4,t:'burn',pct:.8,dur:10}]});
+U('Mythic','gojo','Six-Eyes Teacher','Satoru Gojo','🕶️','dps',2800,9.7,150,2265,2,{r:0,n:99,all:true},{auraSlow:.55,p:'Infinity: enemies in range are slowed by 55%',a:[{n:'Limitless Void',d:'Stun every enemy on the map for 3s.',cd:40,u:4,t:'map',stun:3},{n:'Hollow Purple',d:'8× DMG to every enemy on the map.',cd:70,u:5,t:'map',m:8}]});
+U('Mythic','meg2','Shadow Summoner','Megumi Fushiguro','🌑','dps',2300,9.25,140,2200,2,{r:44,n:5},{evo:true,grow:{lvl:.12},p:'Ten Shadows: +12% DMG per upgrade level. Every upgrade awakens a new shikigami.',a:[
   {n:'Divine Dogs',d:'Two Divine Dogs fight beside you for 20s.',cd:35,u:2,t:'summon',ic:'🐕',cnt:2,m:.6,sp:.5,dur:20},
   {n:'Nue',d:'Nue strikes from the sky with 1.6× reach for 15s.',cd:45,u:3,t:'summon',ic:'🦉',cnt:1,m:1.2,sp:1.0,dur:15,rm:1.6},
   {n:'Max Elephant',d:'Max Elephant crashes in: heavy hits that slow enemies 40% for 15s.',cd:55,u:4,t:'summon',ic:'🐘',cnt:1,m:1.0,sp:1.3,dur:15,slow:.4},
   {n:'Mahoraga',d:'Mahoraga adapts: every strike hits 8% harder (up to 40 strikes) for 25s.',cd:90,u:5,t:'summon',ic:'☸️',cnt:1,m:2.5,sp:.8,dur:25,ramp:.05}]});
-U('Mythic','sukuna','Malevolent Chef','Ryomen Sukuna','🍳','dps',2500,3.0,140,{evo:true,dot:'bleed',dmgBuff:.45,p:'Sorcery Master: +45% DMG. Cleave and Dismantle: Applies Bleed (60% DMG over 6s).',
+U('Mythic','sukuna','Malevolent Chef','Ryomen Sukuna','🍳','dps',2500,9.45,140,2090,2,{r:44,n:5},{evo:true,dot:'bleed',dmgBuff:.45,p:'Sorcery Master: +45% DMG. Cleave and Dismantle: Applies Bleed (60% DMG over 6s).',
   a:[{n:'Shrine',d:'For 4s, attacks every enemy in range at once with 60% faster attacks.',cd:35,u:5,t:'shrine',dur:4,spa:.4}]});
-U('Mythic','igris','Blood Commander','Igris','🛡️','dps',3000,2.6,125,{noBanner:true,maxPlace:1,dot:'bleed',dot2:'mutilate',p:'Bleed: hits cause Bleed (60% DMG over 6s). Mutilate: hits also apply Mutilate (60% DMG over 4s). Empowered by the Shadow Monarch. On a team with the SJW line, follows up every SJW attack.'});
-U('Mythic','beru','Ant King','Beru','🐜','dps',3000,3.0,130,{noBanner:true,maxPlace:1,dot:'poison',dot2:'toxic',p:'Poison: hits poison enemies (80% DMG over 8s). Toxic: hits also apply Toxic (80% DMG over 6s). Empowered by the Shadow Monarch. On a team with the SJW line, follows up every SJW attack.'});
-U('Mythic','sjw3','A-Rank Hunter','Sung Jinwoo','⚔️','dps',2400,3.0,130,{evo:true,maxPlace:1,grow:{kill:.02,cap:3},dot:'poison',p:'Poison: hits poison enemies (80% DMG over 8s).'});
+U('Mythic','igris','Blood Commander','Igris','🛡️','dps',3000,8.4,125,2375,1,{r:0,n:1},{noBanner:true,dot:'bleed',dot2:'mutilate',p:'Bleed: hits cause Bleed (60% DMG over 6s). Mutilate: hits also apply Mutilate (60% DMG over 4s). Empowered by the Shadow Monarch. On a team with the SJW line, follows up every SJW attack.'});
+U('Mythic','beru','Ant King','Beru','🐜','dps',3000,8.4,130,2375,1,{r:0,n:1},{noBanner:true,dot:'poison',dot2:'toxic',p:'Poison: hits poison enemies (80% DMG over 8s). Toxic: hits also apply Toxic (80% DMG over 6s). Empowered by the Shadow Monarch. On a team with the SJW line, follows up every SJW attack.'});
+U('Mythic','sjw3','A-Rank Hunter','Sung Jinwoo','⚔️','dps',2400,7.95,130,3360,1,{r:0,n:1},{evo:true,grow:{kill:.02,cap:3},dot:'poison',p:'Poison: hits poison enemies (80% DMG over 8s).'});
 
 /* ---------- SECRET ---------- */
-U('Secret','rimuru','Slime God','Rimuru Tempest','🌌','dps',4500,3.85,150,{evo:true,grow:{kill:.02,cap:2},auraSlow:.25,statusEvery:5,p:'Predator: +2% DMG per kill (max +200%). Enemies in range are 25% slower. Raging Elements: every 5th attack inflicts a random status effect (Freeze, Burn or Shock) on every enemy it hits.',a:[{n:'Beelzebuth',d:'5× DMG to every enemy on the map.',cd:60,u:5,t:'map',m:5}]});
-U('Secret','shanks','One-armed Pirate','Figurland Shanks','🏴‍☠️','dps',5000,3.5,160,{bossDmg:1.2,auraSlow:.3,p:"Conqueror's Presence: enemies in range are 30% slower. +20% DMG to bosses.",a:[{n:'Haki Burst',d:'Stun all enemies for 4s and deal 4× DMG to all.',cd:70,u:5,t:'map',stun:4,m:4}]});
-U('Secret','sjw4','S-Rank Hunter','Sung Jinwoo','🌑','dps',4800,3.6,140,{evo:true,maxPlace:1,dot:'poison',arise:true,p:'Arise: defeated enemies have a 1/3 chance to become shadow soldiers.'});
+U('Secret','rimuru','Slime God','Rimuru Tempest','🌌','dps',4500,10.8,150,5385,1,{r:0,n:99,all:true},{evo:true,grow:{kill:.02,cap:2},auraSlow:.25,statusEvery:5,p:'Predator: +2% DMG per kill (max +200%). Enemies in range are 25% slower. Raging Elements: every 5th attack inflicts a random status effect (Freeze, Burn or Shock) on every enemy it hits.',a:[{n:'Beelzebuth',d:'5× DMG to every enemy on the map.',cd:60,u:5,t:'map',m:5}]});
+U('Secret','shanks','One-armed Pirate','Figurland Shanks','🏴‍☠️','dps',5000,11.05,160,4000,1,{r:0,n:99,all:true},{bossDmg:1.2,auraSlow:.3,p:"Conqueror's Presence: enemies in range are 30% slower. +20% DMG to bosses.",a:[{n:'Haki Burst',d:'Stun all enemies for 4s and deal 4× DMG to all.',cd:70,u:5,t:'map',stun:4,m:4}]});
+U('Secret','sjw4','S-Rank Hunter','Sung Jinwoo','🌑','dps',4800,9.3,140,3885,1,{r:0,n:1},{evo:true,dot:'poison',arise:true,p:'Arise: defeated enemies have a 1/3 chance to become shadow soldiers.'});
 
 /* ---------- MALFUNCTION ---------- */
-U('Malfunction','sjw5','Shadow Monarch','Sung Jinwoo','👑','dps',7500,4.2,160,{evo:true,maxPlace:1,arise:true,monarch:true,hp:300,p:'Shadow Legion: kills may rise as shadow soldiers. Loyal Shadows: Igris and Beru always tag along, following up every attack for 25% of their unit damage (DOT scaled to match), 75% if one is on your team, or 125% if both are. Igris adds Bleed and Beru adds Poison.',a:[{n:'Army of Shadows',d:'Summon 5 shadow soldiers for 20s.',cd:45,u:3,t:'summon',ic:'👤',cnt:5,m:.5,sp:.5,dur:20}]});
+U('Malfunction','sjw5','Shadow Monarch','Sung Jinwoo','👑','dps',7500,10.2,160,6000,1,{r:0,n:1},{evo:true,arise:true,monarch:true,hp:300,p:'Shadow Legion: kills may rise as shadow soldiers. Loyal Shadows: Igris and Beru always tag along, following up every attack for 25% of their unit damage (DOT scaled to match), 75% if one is on your team, or 125% if both are. Igris adds Bleed and Beru adds Poison.',a:[{n:'Army of Shadows',d:'Summon 5 shadow soldiers for 20s.',cd:45,u:3,t:'summon',ic:'👤',cnt:5,m:.5,sp:.5,dur:20}]});
 /* ---------- Tags: anime · story status · powers. Units can have several. ---------- */
 
 /* ---------- One-Punch Man update ---------- */
-U('Rare','king','Fraudulent Hero','King','🤴','dps',400,8,130,{spa:8,maxPlace:1,kingEng:true,p:'King Engine: when a boss enters range, stuns all enemies in range and applies Fear to them permanently. \u201cSAITAMA! HELP!\u201d: while a boss is in range, Saitama follows up every attack for 50% of his damage (125% if he is on your team).'});
-U('Mythic','saitama','Caped Baldy','Saitama','👊','dps',3000,0,110,{noBanner:true,maxPlace:1,bossDmg:1.5,p:'One Punch: deals 50% more damage to bosses.'});
-U('Mythic','tatsu','Terrible Tornado','Tatsumaki','🌪️','dps',2400,0,150,{maxPlace:3,auraSlow:.25,p:'Psychic Pressure: all enemies in range are 25% slower.'});
-U('Legendary','genos','Demon Cyborg','Genos','🤖','dps',800,0,135,{maxPlace:3,dot:'burn',p:'Incineration Cannon: hits apply Burn.'});
-U('Epic','killua','Yoyo','Killua Zoldyck','🪀','dps',280,0,125,{maxPlace:2,buddy:{ids:['gon'],cd:.15},p:'Best Buddies: if Gon is in range, both units\u2019 cooldowns are 15% faster.',a:[{n:'Shock',d:'Applies \u201cShock\u201d to the strongest enemy in range.',cd:60,u:3,t:'shock'}]});
-U('Legendary','garou','Hero Killer','Garou','🥋','dps',900,0,110,{maxPlace:1,blood:true,p:'Bloodthirst: gains damage as his health drops (+20% at half health, +75% below \u2153 health).'});
-U('Legendary','vaccine','Plague Man','Vaccine Man','💉','dps',850,0,130,{fullSplash:true,p:'Energy Balls: splash attacks hit for full damage.',a:[{n:'True Form',d:'+30% DMG for 10s.',cd:50,u:3,t:'buff',dmg:.3,dur:10}]});
-U('Rare','mumen','Licenceless Hero','Mumen Rider','🚲','dps',130,0,105,{courage:.05,p:'Courageous Heart: while this unit is damaged or statused, its cooldowns and DMG are 5% better.'});
+U('Rare','king','Fraudulent Hero','King','🤴','dps',400,8,130,320,1,{r:0,n:1},{kingEng:true,p:'King Engine: when a boss enters range, stuns all enemies in range and applies Fear to them permanently. \u201cSAITAMA! HELP!\u201d: while a boss is in range, Saitama follows up every attack for 50% of his damage (125% if he is on your team).'});
+U('Mythic','saitama','Caped Baldy','Saitama','👊','dps',3000,8.4,110,2375,1,{r:0,n:1},{noBanner:true,bossDmg:1.5,p:'One Punch: deals 50% more damage to bosses.'});
+U('Mythic','tatsu','Terrible Tornado','Tatsumaki','🌪️','dps',2400,9.35,150,2035,3,{r:44,n:5},{maxPlace:3,auraSlow:.25,p:'Psychic Pressure: all enemies in range are 25% slower.'});
+U('Legendary','genos','Demon Cyborg','Genos','🤖','dps',800,6.8,135,920,3,{r:34,n:3},{maxPlace:3,dot:'burn',p:'Incineration Cannon: hits apply Burn.'});
+U('Epic','killua','Yoyo','Killua Zoldyck','🪀','dps',280,4.4,125,450,2,{r:26,n:2},{maxPlace:2,buddy:{ids:['gon'],cd:.15},p:'Best Buddies: if Gon is in range, both units\u2019 cooldowns are 15% faster.',a:[{n:'Shock',d:'Applies \u201cShock\u201d to the strongest enemy in range.',cd:60,u:3,t:'shock'}]});
+U('Legendary','garou','Hero Killer','Garou','🥋','dps',900,6.05,110,1000,1,{r:0,n:1},{maxPlace:1,blood:true,p:'Bloodthirst: gains damage as his health drops (+20% at half health, +75% below \u2153 health).'});
+U('Legendary','vaccine','Plague Man','Vaccine Man','💉','dps',850,6.95,130,960,3,{r:34,n:3},{fullSplash:true,p:'Energy Balls: splash attacks hit for full damage.',a:[{n:'True Form',d:'+30% DMG for 10s.',cd:50,u:3,t:'buff',dmg:.3,dur:10}]});
+U('Rare','mumen','Licenceless Hero','Mumen Rider','🚲','dps',130,2.2,105,215,5,{r:0,n:1},{courage:.05,p:'Courageous Heart: while this unit is damaged or statused, its cooldowns and DMG are 5% better.'});
+
 const TAGS={
  sjw:['Solo Leveling','Main Character','Hunter'],
  sjw2:['Solo Leveling','Main Character','Hunter'],
@@ -501,36 +500,12 @@ const followers=()=>FOLLOW.filter(id=>SAVE.loadout.includes(id));
 const LOYAL=1.25;   // Loyal Shadows: with BOTH Igris (Blood Commander) and Beru (Ant King) on the team, their follow-ups deal 1.25x (0.75x with one shadow; the Monarch with no shadows on the team gets 0.25x)
 const sjwPen=d=>1;   // Loyal Shadows no longer costs the SJW line any DMG
 SJW_LINE.forEach(id=>{if(id!=='sjw5'&&DEF[id])DEF[id].p+='   Loyal Shadows: If "Blood Commander" or "Ant King" are on the team: every attack is followed up by them, applying their DOTs (Bleed and Mutilate from Blood Commander, Poison and Toxic from Ant King). With one on the team their follow-up deals 75% of their damage, with both 125%, and their DOT scales with it.'});
-/* ---------- Cost and placement limits: set by each unit's damage vs the median of its rarity (late-game growth counts a little) ---------- */
-const RATIO={},COST={},PLACE={};
-(()=>{
-  const g=u=>u.grow?(u.grow.cap!==undefined?u.grow.cap:u.grow.lvl*4):0,eff=u=>u.dmg*(1+.35*g(u));
-  RN.forEach(r=>{
-    const L=UNITS.filter(u=>u.r===r&&u.role==='dps').map(eff).sort((a,b)=>a-b),med=L.length?L[Math.floor(L.length/2)]:1;
-    UNITS.filter(u=>u.r===r).forEach(u=>{
-      const k=u.role==='dps'?Math.min(1.6,Math.max(.55,Math.pow(eff(u)/med,.7))):1;
-      RATIO[u.id]=k;COST[u.id]=Math.round(RAR[r].cost*k/5)*5;
-      let m=u.maxPlace||RAR[r].max;if(!u.maxPlace){if(k>1.2)m--;if(u.role==='support')m--}   // hard hitters and supports get fewer placements
-      PLACE[u.id]=Math.max(1,m);
-    });
-  });
-})();
-COST.yojin=COST.yojin2=400;   // Yoo Jinho costs the whole starter money
-const costOf=d=>Math.round((COST[d.id]||RAR[d.r].cost)*(1-(d.cheap||0)));
+/* ---------- Cost and placement limits: set per unit in its U(...) line (COST and MAX); 'cheap' still discounts the cost ---------- */
+const costOf=d=>Math.round(d.cost*(1-(d.cheap||0)));
 /* ---------- Attack area: melee units hit one enemy, explosive units splash nearby enemies, a few hit everything in range ---------- */
 const AOE_FALL=.75;   // splash targets take 75% damage
-const ALLR=['rimuru','shanks','gojo'];
-function aoeOf(d){
-  if(d._aoe)return d._aoe;
-  let a;
-  if(d.role==='farm')a={r:0,n:1};
-  else if(ALLR.includes(d.id))a={r:0,n:99,all:true};
-  else if(d.pierce)a={r:40,n:d.pierce};
-  else if(SINGLE.includes(d.id))a={r:0,n:1};
-  else{const t={Rare:[0,1],Epic:[26,2],Legendary:[34,3],Mythic:[44,5],Secret:[60,8]}[d.r]||[0,1];a={r:t[0],n:t[1]}}
-  return d._aoe=a;
-}
-const aoeTxt=d=>{const a=aoeOf(d);return d.role==='farm'?'Does not attack.':a.all?'Hits every enemy in range at once.':a.n>1?`Splash: hits up to ${a.n} enemies within ${a.r}px of its target (${Math.round((d.fullSplash?1:AOE_FALL)*100)}% DMG on the extras).`+(isMelee(d)?' Melee: attacks 15% faster.':''):'Melee: hits a single enemy and attacks 15% faster.'};
+const aoeOf=d=>d.aoe||{r:0,n:1};   // splash radius / target count are set per unit in its U(...) line
+const aoeTxt=d=>{const a=aoeOf(d);return d.role==='farm'?'Does not attack.':a.all?'Hits every enemy in range at once.':a.n>1?`Splash: hits up to ${a.n} enemies within ${a.r}px of its target (${Math.round((d.fullSplash?1:AOE_FALL)*100)}% DMG on the extras).`:'Melee: hits a single enemy.'};
 
 /* ---------- Items & evolutions ---------- */
 const ITEMS={
@@ -730,7 +705,7 @@ function sanitizePaths(){
     const lost=SAVE.sys2[id].length-ok.length;if(lost>0)SAVE.items.crystal=(SAVE.items.crystal||0)+lost;SAVE.sys2[id]=ok}
   ensureSys2();
 }
-const maxOf=d=>d.maxPlace||PLACE[d.id]||RAR[d.r].max;
+const maxOf=d=>d.maxPlace||1;
 /* DOT types: every unit with that type deals x * (its hit damage) spread over y seconds */
 const DOTS={bleed:{x:.6,y:6,n:'Bleed'},poison:{x:.8,y:8,n:'Poison'},burn:{x:.5,y:3,n:'Burn'},mutilate:{x:.6,y:4,n:'Mutilate'},toxic:{x:.8,y:6,n:'Toxic'}};
 const dotTxt=k=>`${DOTS[k].n} (${Math.round(DOTS[k].x*100)}% DMG over ${DOTS[k].y}s)`;
