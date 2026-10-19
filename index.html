@@ -1110,7 +1110,8 @@ function openUnit(id){
   if(EVO_FROM[id]&&SAVE.inv[EVO_FROM[id]])xf.push([EVO_FROM[id],id]);
   const xferHtml=xf.length?'<div class="evo" style="border-style:solid"><b>⭐ Star Transfer</b><br><span class="mut">Move ★ from a pre-evolution to its evolved form without evolving again. Costs 1 🔮 System Crystal per ★ (you have '+item('crystal')+').</span>'+xf.map(([a,b])=>{
     const A=DEF[a],B=DEF[b],k=Math.min(Math.max(0,SAVE.inv[a]-1),Math.max(0,5-stars(b))),kAll=Math.min(k,item('crystal'));
-    return `<p style="margin:6px 0">${A.ic} ${A.n} (${stars(a)}★) → ${B.ic} ${B.n} (${stars(b)}★)</p><div class="row" style="flex-wrap:wrap"><button class="btn" data-xf="${a}|${b}|1" ${k>=1&&item('crystal')>=1?'':'disabled'}>Transfer 1★ · 1 🔮</button><button class="btn" data-xf="${a}|${b}|${kAll}" ${kAll>=2?'':'disabled'}>Transfer ${Math.max(kAll,2)>kAll?'all':kAll+'★'}${kAll>=2?' ('+kAll+'★) · '+kAll+' 🔮':''}</button></div>`}).join('')+'</div>':'';
+    const why=SAVE.inv[a]<=1?`${A.n} has no spare ★ to move (its first copy always stays; you need duplicates or Star Crystals on it).`:stars(b)>=5?`${B.n} is already 5★.`:item('crystal')<1?'You need at least 1 🔮 System Crystal.':'';
+    return `<p style="margin:6px 0">${A.ic} ${A.n} (${stars(a)}★) → ${B.ic} ${B.n} (${stars(b)}★)</p>${why?`<p class="mut" style="margin:2px 0;font-size:12px">⚠ ${why}</p>`:''}<div class="row" style="flex-wrap:wrap"><button class="btn" data-xf="${a}|${b}|1" ${k>=1&&item('crystal')>=1?'':'disabled'}>Transfer 1★ · 1 🔮</button><button class="btn" data-xf="${a}|${b}|${kAll}" ${kAll>=2?'':'disabled'}>Transfer ${Math.max(kAll,2)>kAll?'all':kAll+'★'}${kAll>=2?' ('+kAll+'★) · '+kAll+' 🔮':''}</button></div>`}).join('')+'</div>':'';
   const S=modOf(id);
   m.hidden=false;
   m.innerHTML=`<div class="panel" style="border-color:${RAR[u.r].c}">
