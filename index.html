@@ -197,7 +197,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
 
 <div class="wrap" id="lobby">
   <header class="top">
-    <div class="logo">MALFUNCTION<span>TD</span><small>UPD 0.5 - ONE PUNCH!</small></div>
+    <div class="logo">MALFUNCTION<span>TD</span><small>UPD 0.25 - ONE PUNCH!</small></div>
     <button class="pill" id="l-log" title="See what is new in this update">📜 Update Log<span id="l-logdot" class="logdot" hidden></span></button>
     <div class="pills"><span class="pill" id="gems"></span><span class="pill" id="sp"></span><button class="pill" id="l-mute" aria-label="Toggle sound">🔊</button><input type="range" id="l-vol" min="0" max="100" value="80" aria-label="Sound effects volume" title="Sound effects volume" style="width:90px;accent-color:var(--acc)"><button class="pill" id="l-mmute" aria-label="Toggle music" title="Mute / unmute music">🎵</button><input type="range" id="l-mvol" min="0" max="100" value="60" aria-label="Music volume" title="Music volume" style="width:90px;accent-color:var(--acc2)"><button class="pill" id="l-dev" title="Developer tools">🛠 Dev</button><button class="pill" id="l-help">❓ How to play</button></div>
   </header>
@@ -503,9 +503,14 @@ SJW_LINE.forEach(id=>{if(id!=='sjw5'&&DEF[id])DEF[id].p+='   Loyal Shadows: If "
 /* ---------- Cost and placement limits: set per unit in its U(...) line (COST and MAX); 'cheap' still discounts the cost ---------- */
 const costOf=d=>Math.round(d.cost*(1-(d.cheap||0)));
 /* ---------- Attack area: melee units hit one enemy, explosive units splash nearby enemies, a few hit everything in range ---------- */
-const AOE_FALL=.75;   // splash targets take 75% damage
+const AOE_FALL=.75;   // Splash: nearby ("splashed") enemies take 75% damage, the main target 100%
+const FULL_FALL=.9;   // Full Range: every other enemy in range takes 90% damage
+const falloff=d=>aoeOf(d).all?FULL_FALL:(d.fullSplash?1:AOE_FALL);
 const aoeOf=d=>d.aoe||{r:0,n:1};   // splash radius / target count are set per unit in its U(...) line
-const aoeTxt=d=>{const a=aoeOf(d);return d.role==='farm'?'Does not attack.':a.all?'Hits every enemy in range at once.':a.n>1?`Splash: hits up to ${a.n} enemies within ${a.r}px of its target (${Math.round((d.fullSplash?1:AOE_FALL)*100)}% DMG on the extras).`:'Melee: hits a single enemy.'};
+const subTxt=d=>(d.multi>1?` Multi-Hit: hits ${d.multi} times per attack (Raw Damage / ${d.multi} per hit).`:'')+(d.soul?' Soul Hit: hits through shields.':'');
+const aoeTxt=d=>{const a=aoeOf(d);if(d.role==='farm')return 'Does not attack.';
+  const base=a.all?`Full Range: hits every enemy in range for ${Math.round(FULL_FALL*100)}% DMG (100% on the main target).`:a.n>1?`Splash: hits up to ${a.n} enemies within ${a.r}px of its target (${Math.round(falloff(d)*100)}% DMG on the extras, 100% on the main target).`:'Melee: hits a single enemy.';
+  return base+subTxt(d)};
 
 /* ---------- Items & evolutions ---------- */
 const ITEMS={
@@ -558,7 +563,8 @@ const EN={
   grunt: {hp:1,  sp:55, r:11,rew:1,  leak:1, ic:'👻',col:'#8bd17c'},
   runner:{hp:.55,sp:105,r:9, rew:.8, leak:1, ic:'🦇',col:'#6fb7ff',fast:true},
   tank:  {hp:3.5,sp:36, r:14,rew:2.5,leak:3, ic:'🐗',col:'#d99a5b',hits:true},
-  boss:  {hp:22, sp:28, r:21,rew:14, leak:25,ic:'👹',col:'#ff5a5a',boss:true,hits:true}
+  boss:  {hp:22, sp:28, r:21,rew:14, leak:25,ic:'👹',col:'#ff5a5a',boss:true,hits:true},
+  miniboss:{hp:22,sp:28,r:21,rew:14,leak:25,ic:'😈',col:'#ff9a5a',boss:true,mini:true}   // Mini Boss: same stats as a Boss, but it never attacks (no smash, no boss moves)
 };
 const QS=[
  {id:'q1',n:'Will of the Weak',d:'Clear Double Dungeon using only E-Rank Hunter. Evolves him into C-Rank.',ok:g=>g.map.id==='dungeon'&&g.lo.length===1&&g.lo[0]==='sjw'},
@@ -592,6 +598,8 @@ SHOP.push({t:'tok_hero',i:'crystal',c:2});   // Hero Association shop
 const INTERMISSION=8;   // seconds before the next wave is forced to start
 
 /* ---------- Maps (hp = difficulty multiplier, drops = what a clear can give) ---------- */
+/* Optional enemy tags per map/mode: regen:true = Regenerating enemies (+1 HP/s, stopped by Bleed/Mutilate), shield:N = Shielded enemies (N shields, 1 hit breaks each; shield:true = 1). Example: {id:'hero',...,regen:true,shield:2}.
+   Unit subtype traits (add to a unit's {traits}): multi:N = Multi-Hit (N hits of DMG/N each), soul:true = Soul Hit (ignores shields). */
 const MAPS=[
   {id:'plains',name:'Training Plains',desc:'A winding road. Perfect for learning the ropes.',waves:20,hp:1.0,gems:200,bossName:'Giant Goblin',
    drops:[{id:'crystal',p:1,min:1,max:1},{unit:'slime',p:.05}],
@@ -1221,7 +1229,7 @@ function summon(n){
 }
 /* ---------- Auto-fill: build the strongest team, with the Leader chosen for its 4DV4NC3D P4TH and Tags ---------- */
 const AREA_ALL=5,PLACE_W=.85;   // Autofill: enemies a 'hits everything in range' unit typically catches; value of each extra placement
-function areaMul(u){const a=aoeOf(u);if(a.n<=1)return 1;const extra=(a.all?AREA_ALL:a.n)-1,cov=a.all?1:Math.min(1,.35+a.r/70);return 1+extra*(u.fullSplash?1:AOE_FALL)*cov}   // Area DPS: expected enemies hit per attack
+function areaMul(u){const a=aoeOf(u);if(a.n<=1)return 1;const extra=(a.all?AREA_ALL:a.n)-1,cov=a.all?1:Math.min(1,.35+a.r/70);return 1+extra*falloff(u)*cov}   // Area DPS: expected enemies hit per attack
 const placeMul=u=>1+(Math.max(1,maxOf(u))-1)*PLACE_W;   // every placement a unit may have adds damage (or income)
 const effDps=(u,L,team)=>effDps0(u,L,team)*placeMul(u);
 function effDps0(u,L,team){   // rough damage-per-second estimate (used only by Auto-fill)
@@ -1354,7 +1362,7 @@ function freePull(){
 /* ---------- Update Log (newest entry first: add a new object at the top for each update) ---------- */
 const UPDATE_LOG=[
  {v:'Update 0.25',sub:'One Punch!',sections:[
-  {h:'6 *NEW* Units + 1 Evo',items:['Caped Baldy [Mythic] - Saitama','Hero Killer [Legendary] - Garou','Terrible Tornado [Mythic] - Tatsumaki','Demon Cyborg [Legendary] - Genos','Fraudulent Hero [Rare] - King','Plague Man [Legendary] - Vaccine Man','Licenceless Hero [Rare] - Mumen Rider','Yoyo [Epic] - Killua Zoldyck']},
+  {h:'8 *NEW* Units',items:['Licenceless Hero [Rare] - Mumen Rider','Fraudulent Hero [Rare] - King','Yoyo [Epic] - Killua Zoldyck','Hero Killer [Legendary] - Garou','Demon Cyborg [Legendary] - Genos','Plague Man [Legendary] - Vaccine Man','Terrible Tornado [Mythic] - Tatsumaki','Caped Baldy [Mythic] - Saitama']},
   {h:'*NEW* Raid',items:['Hero Association']},
   {h:'*NEW* Status Effects',items:['“Shock” - Stuns enemy for 3 seconds every 5 seconds (lasts 15 seconds) (10 second cooldown before it can be applied again from any source)','“Fear” - Slows enemy down by 10% (Stacks with other slow effects), and increases damage taken from all sources by 15%. (lasts 30 seconds) (20 second cooldown before it can be applied again from any source)','“Freeze” - Prevents enemy movement for 3 seconds, and makes them 10% slower for 10 seconds (Stacks with other forms of slow) (20 second cooldown before it can be applied again from any source)','“Mutilate” - 60% of unit damage over 4 seconds','“Toxic” - 80% of unit damage over 6 seconds']},
   {h:'*NEW* Basic Quests',items:['Repeatable quests for in-game rewards!','Kill 50 Boss Enemies (Reward: 3 System Crystals, 1k Summon Gems)','Summon 50 Units (Reward: 1 System Crystal)','Clear 5 Story Maps (Reward: 5 System Crystals, 1k Gems)','Kill 1,000 Enemies (Reward: 3 System Crystals, 1k Summon Gems)']},
@@ -1370,6 +1378,7 @@ const UPDATE_LOG=[
  ]}
 ];
 const logKey=()=>UPDATE_LOG[0].v+(UPDATE_LOG[0].rev?'.r'+UPDATE_LOG[0].rev:'');
+const rarTxt=t=>t.replace(/\[(Rare|Epic|Legendary|Mythic|Secret|Malfunction)\]/g,(m,r)=>`[<b style="color:${RAR[r].c}">${r}</b>]`);   // rarity name in the rarity's colour, brackets keep the text colour
 function logDot(){const d=$('#l-logdot');if(d)d.hidden=(SAVE.logSeen===logKey())}
 function openLog(){   // pick an update from the list (newest first, oldest last)
   const m=$('#modal');m.hidden=false;
@@ -1378,7 +1387,7 @@ function openLog(){   // pick an update from the list (newest first, oldest last
     m.innerHTML='<div class="panel" style="max-width:640px"><h2 style="font-size:34px">Update Log</h2>'+
       '<div class="logtabs">'+UPDATE_LOG.map((x,i)=>`<button class="btn logtab ${i===sel?'on':''}" data-lg="${i}">${x.v}${i===0?'<span class="new">NEW</span>':''}</button>`).join('')+'</div>'+
       `<div class="logv"><h3 style="margin:10px 0 0;font-size:26px">${u.v}</h3><span class="mut">${u.sub||''}</span></div>`+
-      u.sections.map(x=>`<div class="logsec"><h4>${x.h}</h4><ul>${x.items.map(t=>'<li>'+t+'</li>').join('')}</ul></div>`).join('')+
+      u.sections.map(x=>`<div class="logsec"><h4>${x.h}</h4><ul>${x.items.map(t=>'<li>'+rarTxt(t)+'</li>').join('')}</ul></div>`).join('')+
       '<div class="row"><button class="btn" id="lg-x">Close</button></div></div>';
     $('#lg-x').onclick=()=>m.hidden=true;
     $$('#modal [data-lg]').forEach(b=>{b.onclick=()=>{sel=+b.dataset.lg;draw()}});
@@ -1550,8 +1559,11 @@ function countAt(w){return Math.min(110,6+Math.floor(w*1.8+w*w*.02))}
 function buildWave(w,map){
   const q=[],n=Math.round(countAt(w)*(map.cm||1));   // map.cm = enemy count multiplier
   for(let i=0;i<n;i++){let t='grunt';const r=Math.random();if(w>=3&&r<.25)t='runner';else if(w>=5&&r<.4)t='tank';q.push(t)}
-  const bosses=(map.endless?(w%5===0?1+Math.floor(w/30):0):(w===map.waves?2:(w%5===0?1:0)))*(map.bm||1);   // map.bm = boss multiplier
-  for(let b=0;b<bosses;b++)q.splice(Math.floor(q.length*(b+1)/(bosses+1)),0,'boss');
+  // Bosses only spawn on the FINAL wave of a mode (20 story, 30 raid, 50 trial, every 20 waves in Endless). Every 5th wave otherwise brings 2 Mini Bosses (the final wave adds 1 Mini Boss next to the 2 Bosses).
+  const bm=map.bm||1,fin=map.endless?(w%20===0):(w===map.waves),five=w%5===0;
+  const bosses=fin?2*bm:0,minis=fin?1*bm:(five?2*bm:0);
+  const ins=(k,type)=>{for(let b=0;b<k;b++)q.splice(Math.floor(q.length*(b+1)/(k+1)),0,type)};
+  ins(minis,'miniboss');ins(bosses,'boss');
   return q;
 }
 const AUTOSKIP_T=5;   // seconds between the last spawn of a wave and the next wave starting (Auto Skip)
@@ -1562,11 +1574,11 @@ function startWave(force,spawning){
   if(G.waveActive){if(force!==true||!(canSkip()||(spawning===true&&G.queue.length&&G.wave<G.map.waves)))return;waveRewards()}   // skipping: the wave you leave behind still pays out
   G.wave++;G.queue=(G.queue||[]).concat(buildWave(G.wave,G.map));G.waveT=0;G.waveActive=true;G.spawnT=.3;G.gap=Math.max(.28,.9-.02*G.wave);G.nextT=0;
   G.towers.forEach(t=>{if(t.down){t.down=false;t.hp=t.maxhp*.5}});
-  const bw=G.queue.includes('boss');banner(bw?`WAVE ${G.wave} — BOSS!`:`WAVE ${G.wave}`);sfx(bw?'boss':'wave');
+  const bw=G.queue.includes('boss'),mw=G.queue.includes('miniboss');banner(bw?`WAVE ${G.wave} — BOSS!`:mw?`WAVE ${G.wave} — MINI BOSS!`:`WAVE ${G.wave}`);sfx(bw||mw?'boss':'wave');
 }
 function spawn(type){
   const d=EN[type],hp=hpAt(G.wave,G.map)*d.hp,p=G.path.pts[0];
-  G.enemies.push({type,def:d,hp,mhp:hp,d:0,x:p[0],y:p[1],sp:d.sp,r:d.r,rew:(8+G.wave*1.6)*d.rew,boss:!!d.boss,fast:!!d.fast,slow:0,slowT:0,aSlow:0,vuln:0,stun:0,shock:0,shockTick:0,shockCd:0,fear:0,fearCd:0,chill:0,freezeCd:0,dot:null,at:1,bt:3+Math.random()*2,dead:false});
+  G.enemies.push({type,def:d,hp,mhp:hp,d:0,x:p[0],y:p[1],sp:d.sp,r:d.r,rew:(8+G.wave*1.6)*d.rew,boss:!!d.boss,mini:!!d.mini,fast:!!d.fast,regen:!!(G.map.regen),shield:G.map.shield?(G.map.shield===true?1:G.map.shield):0,shieldMax:G.map.shield?(G.map.shield===true?1:G.map.shield):0,slow:0,slowT:0,aSlow:0,vuln:0,stun:0,shock:0,shockTick:0,shockCd:0,fear:0,fearCd:0,chill:0,freezeCd:0,dot:null,at:1,bt:3+Math.random()*2,dead:false});
 }
 /* ---------- boss attacks ---------- */
 const LH_SHARE=.75;   // Lion Heart: Subaru takes 75% of the damage, the protected ally only 25%
@@ -1594,7 +1606,7 @@ function bossMove(e){
   const MV=BOSS_MOVES.concat((G.map.moves||[]).map(k=>EXTRA_MOVES[k]).filter(Boolean));
   let r=Math.random()*MV.reduce((a,m)=>a+m.w,0),mv=MV[0];
   for(const m of MV){r-=m.w;if(r<=0){mv=m;break}}
-  mv.f(e);G.bossMsg={s:e.def.boss&&G.map.bossName?G.map.bossName+' uses '+mv.n+'!':mv.n+'!',t:2.4};
+  mv.f(e);G.bossMsg={s:e.def.boss&&!e.mini&&G.map.bossName?G.map.bossName+' uses '+mv.n+'!':mv.n+'!',t:2.4};
   G.fx.push({k:'flash',t:.2,T:.2,col:'#ff3d3d'});sfx('down');
 }
 function endWave(){
@@ -1909,6 +1921,7 @@ function applyDot(e,t,dps,dur,ty){   // one DOT per type (Bleed, Poison, Burn) c
 }
 function dealDmg(e,dmg,t,crit){
   if(e.dead)return;
+  if(e.shield>0&&!(t&&t.def&&t.def.soul)){e.shield--;addText(e.x,e.y-e.r-4,'SHIELD!','#7ad7ff',.7,true);sfx('hit',0);return}   // Shielded: a single hit breaks a shield (Soul Hit goes straight through)
   if(e.fear>0)dmg*=1.15;
   e.hp-=dmg;addText(e.x,e.y-e.r-4,fmt(dmg),crit?'#ffd23f':'#ffffff',.7,crit);
   if(e.hp<=0)kill(e,t);
@@ -2046,6 +2059,7 @@ function step(dt){
     if(e.fear>0){e.fear-=dt;if(e.fear<=0)e.fearCd=20}else if(e.fearCd>0)e.fearCd-=dt;
     if(e.chill>0){e.chill-=dt;if(e.chill<=0)e.freezeCd=20}else if(e.freezeCd>0)e.freezeCd-=dt;
     if(e.slowT>0){e.slowT-=dt;if(e.slowT<=0)e.slow=0}
+    if(e.regen&&!(e.dots&&(e.dots.bleed||e.dots.mutilate))&&e.hp<e.mhp)e.hp=Math.min(e.mhp,e.hp+dt);   // Regenerating: +1 HP per second, stopped by Bleed / Mutilate
     if(e.dots){
       let any=false;
       for(const k in e.dots){const d=e.dots[k];e.hp-=d.dps*dt*(e.fear>0?1.15:1);d.t-=dt;if(d.t<=0)delete e.dots[k];else any=true;if(e.hp<=0){kill(e,d.src);break}}
@@ -2069,7 +2083,7 @@ function step(dt){
   }
   // boss attacks
   for(const e of G.enemies){
-    if(!e.boss||e.dead||e.stun>0)continue;
+    if(!e.boss||e.mini||e.dead||e.stun>0)continue;
     e.bt-=dt;
     if(e.bt<=0){bossMove(e);e.bt=Math.max(5,10-G.wave*.1)*(.8+Math.random()*.4)}
   }
@@ -2113,7 +2127,9 @@ function step(dt){
           addText(t.x,t.y-30,{freeze:'Freeze!',burn:'Burn!',shock:'Shock!'}[k],col,.9,true);
         }
         for(const e of tg){
-          {const w=e===tg[0]?1:(d.fullSplash?1:AOE_FALL);hit(t,e,mult*w);if(d.dbl&&Math.random()<d.dbl)hit(t,e,mult*w);followUp(t,e,w)}
+          {const w=e===tg[0]?1:(t.shrine.t>0&&!aoeOf(d).all?FULL_FALL:falloff(d));const N=d.multi>1?d.multi:1;   // Multi-Hit: N hits of Raw Damage / N each
+            for(let k=0;k<N&&!e.dead;k++){hit(t,e,mult*w/N);if(d.dbl&&!e.dead&&Math.random()<d.dbl)hit(t,e,mult*w/N)}
+            followUp(t,e,w)}
           if(e===tg[0]){G.fx.push({k:'line',x1:t.x,y1:t.y,x2:e.x,y2:e.y,t:.12,T:.12,col:RAR[d.r].c,w:mult>1?5:2});const A=aoeOf(d);if(A.n>1)G.fx.push({k:'ring',x:e.x,y:e.y,r:6,R:A.all?70:Math.max(A.r,16),t:.25,T:.25,col:RAR[d.r].c})}
         }
         t.cd=t.sp;
@@ -2206,6 +2222,8 @@ function draw(){
     c.lineWidth=2;c.strokeStyle=e.stun>0?'#7ad7ff':(e.dot?'#ff8a3d':(e.slow>0||e.aSlow>0)?'#8fb8ff':'#101010');c.stroke();
     c.font=(e.r*1.3)+'px sans-serif';c.fillText(e.def.ic,e.x,e.y+1);
     const w=e.r*2+4;c.fillStyle='#000';c.fillRect(e.x-w/2,e.y-e.r-9,w,5);c.fillStyle=e.boss?'#ff4d6d':'#7dff6a';c.fillRect(e.x-w/2+1,e.y-e.r-8,(w-2)*clamp(e.hp/e.mhp,0,1),3);
+    if(e.shield>0){c.beginPath();c.arc(e.x,e.y,e.r+4,0,7);c.lineWidth=3;c.strokeStyle='#7ad7ff';c.stroke();if(e.shield>1){c.font='bold 10px Rubik,sans-serif';c.fillStyle='#7ad7ff';c.fillText('x'+e.shield,e.x+e.r+8,e.y-e.r)}}
+    if(e.regen&&!(e.dots&&(e.dots.bleed||e.dots.mutilate))){c.font='10px sans-serif';c.fillText('💚',e.x-e.r-6,e.y+e.r+2)}
     if(e.stun>0){c.font='11px sans-serif';c.fillText('💫',e.x,e.y-e.r-16)}
     if(e.shock>0||e.fear>0||e.chill>0){c.font='11px sans-serif';c.fillText((e.shock>0?'⚡':'')+(e.fear>0?'😨':'')+(e.chill>0?'❄️':''),e.x,e.y+e.r+12)}
   }
@@ -2226,7 +2244,7 @@ function draw(){
     const x=200,w=500,y=10+i*46;
     c.fillStyle='rgba(10,8,24,.85)';c.fillRect(x-8,y-6,w+16,44);c.strokeStyle='#ff4d6d';c.lineWidth=2;c.strokeRect(x-8,y-6,w+16,44);
     c.fillStyle='#3a1020';c.fillRect(x,y+10,w,10);c.fillStyle=e.stun>0?'#7ad7ff':'#ff4d6d';c.fillRect(x,y+10,w*clamp(e.hp/e.mhp,0,1),10);
-    c.fillStyle='#fff';c.font='bold 12px Rubik,sans-serif';c.textAlign='left';c.fillText('👹 '+(G.map.bossName||'Boss'),x,y+2);
+    c.fillStyle='#fff';c.font='bold 12px Rubik,sans-serif';c.textAlign='left';c.fillText((e.mini?'😈 Mini ':'👹 ')+(G.map.bossName||'Boss'),x,y+2);
     c.textAlign='right';c.fillText(fmt(e.hp)+' / '+fmt(e.mhp),x+w,y+2);
     {const st=[];if(e.dots)for(const k in e.dots)st.push(({bleed:'🩸',poison:'☠️',burn:'🔥',mutilate:'🔪',toxic:'🧪'}[k]||'☠️')+' '+(DOTS[k]?DOTS[k].n:'DOT'));
      if(e.stun>0)st.push('💫 Stunned');if(e.slow>0||e.aSlow>0)st.push('🐌 Slowed');if(e.vuln>0)st.push('🎯 Vulnerable');if(e.shock>0)st.push('⚡ Shock');if(e.fear>0)st.push('😨 Fear');if(e.chill>0)st.push(e.stun>0?'🧊 Frozen':'❄️ Chilled');
