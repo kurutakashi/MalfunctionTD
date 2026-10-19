@@ -173,11 +173,6 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
 .row .btn,.row .primary{flex:1;padding:6px 8px}
 .pas{color:var(--acc2)}
 .act{border-left:4px solid var(--gold);padding-left:6px}
-.abil{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;min-height:8px}
-.abtn{position:relative;overflow:hidden;background:var(--panel);border:3px solid var(--line);border-radius:10px;padding:5px 10px;font-weight:700;box-shadow:3px 3px 0 var(--shadow);display:flex;gap:6px;align-items:center;font-size:13px;text-align:left}
-.abtn .cdfill{position:absolute;left:0;top:0;bottom:0;background:rgba(0,0,0,.45);pointer-events:none}
-.abtn.rdy{background:var(--gold);color:#1a1633;animation:rdy 1s infinite alternate}
-@keyframes rdy{to{transform:translateY(-2px)}}
 .hotbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:12px}
 .slot{background:var(--panel);border:3px solid var(--rc,var(--line));border-radius:10px;padding:5px 3px;text-align:center;box-shadow:3px 3px 0 var(--shadow);position:relative;min-width:0}
 .slot .ic{font-size:26px;line-height:1.1}
@@ -204,7 +199,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
   <header class="top">
     <div class="logo">MALFUNCTION<span>TD</span><small>UPD 0 (Release)</small></div>
     <button class="pill" id="l-log" title="See what is new in this update">📜 Update Log<span id="l-logdot" class="logdot" hidden></span></button>
-    <div class="pills"><span class="pill" id="gems"></span><span class="pill" id="sp"></span><button class="pill" id="l-mute" aria-label="Toggle sound">🔊</button><input type="range" id="l-vol" min="0" max="100" value="80" aria-label="Sound effects volume" title="Sound effects volume" style="width:90px;accent-color:var(--acc)"><span title="Music volume">🎵</span><input type="range" id="l-mvol" min="0" max="100" value="60" aria-label="Music volume" title="Music volume" style="width:90px;accent-color:var(--acc2)"><button class="pill" id="l-dev" title="Developer tools">🛠 Dev</button><button class="pill" id="l-help">❓ How to play</button></div>
+    <div class="pills"><span class="pill" id="gems"></span><span class="pill" id="sp"></span><button class="pill" id="l-mute" aria-label="Toggle sound">🔊</button><input type="range" id="l-vol" min="0" max="100" value="80" aria-label="Sound effects volume" title="Sound effects volume" style="width:90px;accent-color:var(--acc)"><button class="pill" id="l-mmute" aria-label="Toggle music" title="Mute / unmute music">🎵</button><input type="range" id="l-mvol" min="0" max="100" value="60" aria-label="Music volume" title="Music volume" style="width:90px;accent-color:var(--acc2)"><button class="pill" id="l-dev" title="Developer tools">🛠 Dev</button><button class="pill" id="l-help">❓ How to play</button></div>
   </header>
   <nav class="tabs" id="tabs">
     <button data-tab="battle" class="on">Battle</button>
@@ -279,6 +274,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
     <button class="btn" id="b-sellall" title="Sell every placed unit">Sell All</button>
     <button class="btn" id="b-pause" title="Pause (P)">Pause</button>
     <button class="btn" id="b-mute" aria-label="Toggle sound">🔊</button>
+    <button class="btn" id="b-mmute" aria-label="Toggle music" title="Mute / unmute music">🎵</button>
     <button class="btn" id="b-restart" title="Restart this map">Restart</button>
     <button class="btn" id="b-quit">Quit</button>
   </div>
@@ -292,7 +288,6 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
     </div>
     <div class="sidewrap"><aside class="side" id="side"></aside><aside id="mgr" hidden></aside></div>
   </div>
-  <div class="abil" id="abil"></div>
   <div class="hotbar" id="hotbar"></div>
 </div>
 
@@ -487,7 +482,7 @@ const TAGS={
  rimuru:['Tensura','Main Character','The Strongest','Slime'],
  shanks:['One Piece','Pirate','Captain','Yonko','Swordsman'],
  subaru2:['Re:Zero','Main Character','Time Looper','Knight'],
- sukuna:['Jujutsu Kaisen','Villain','The Strongest','Sorcerer','Curse'],
+ sukuna:['Jujutsu Kaisen','Villain','The Strongest','Sorcerer'],
  king:['One-Punch Man','S Tier','Fraud','Hero Association'],
  saitama:['One-Punch Man','C Tier','Main Character','The Strongest','Hero Association'],
  tatsu:['One-Punch Man','S Tier','Hero Association','Esper'],
@@ -762,7 +757,7 @@ const pathChips=id=>{const p=SAVE.sys[id]||[];return p.length?p.map(n=>`<span cl
 const AU={ctx:null,master:null,noise:null,last:{}};
 const SFXBOOST=2.4;
 const mvolV=()=>SAVE.mvol===undefined?.6:SAVE.mvol;
-function applyMVol(){if(AU.mus)AU.mus.gain.value=Math.max(0,mvolV())}
+function applyMVol(){if(AU.mus)AU.mus.gain.value=SAVE.mmuted?0:Math.max(0,mvolV())}
 /* ---------- Music: one looping track per game mode, its own volume (separate from SFX) ---------- */
 const MUS={cur:null,src:null,buf:{},want:null};
 function b64buf(s){const t=atob(s),u=new Uint8Array(t.length);for(let i=0;i<t.length;i++)u[i]=t.charCodeAt(i);return u.buffer}
@@ -862,7 +857,8 @@ function askConfirm(msg,yes){   // in-page confirm box (window.confirm is blocke
 }
 function deny(s){toast(s);sfx('error')}
 function canAct(){if(G&&G.paused){deny('Paused. Resume to do that.');return false}return true}
-function updateMuteBtns(){const t=SAVE.muted?'🔇':'🔊';$('#l-mute').textContent=t;$('#b-mute').textContent=t;syncVol()}
+function updateMuteBtns(){const t=SAVE.muted?'🔇':'🔊',m=SAVE.mmuted?'🔕':'🎵';$('#l-mute').textContent=t;$('#b-mute').textContent=t;$('#l-mmute').textContent=m;$('#b-mmute').textContent=m;syncVol()}
+function toggleMusicMute(){SAVE.mmuted=!SAVE.mmuted;save();applyMVol();updateMuteBtns();sfx('click')}   // music mute is separate from the sound-effects mute
 function toggleMute(){SAVE.muted=!SAVE.muted;save();updateMuteBtns();sfx('click')}
 function mk(tag,cls,txt,fn){const e=document.createElement(tag);e.className=cls;e.textContent=txt;if(fn)e.onclick=fn;return e}
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button'))sfx('click')});
@@ -1460,7 +1456,7 @@ function openFillMenu(L){   // a Leader is already in slot 1: choose how to fill
     else toast('Only '+r.shared+' unit'+(r.shared>1?'s':'')+' share '+r.tag+' with '+d.n+', so the rest are your best units (no team buff)')}});
 }
 $('#pullfree').onclick=freePull;
-$('#l-mute').onclick=toggleMute;
+$('#l-mute').onclick=toggleMute;$('#l-mmute').onclick=toggleMusicMute;
 $('#l-help').onclick=openHelp;
 $('#l-log').onclick=openLog;
 $('#idx-btn').onclick=()=>{idxOpen=!idxOpen;renderIndex()};
@@ -1551,10 +1547,10 @@ function startGame(mapId){
   const deco=[];for(let i=0;i<70;i++)deco.push([Math.random()*900,Math.random()*540]);
   SAVE.auto={};SAVE.autoUp={};save();   // auto-abilities and auto-upgrade reset every run
   G={tb:buffOf(SAVE.loadout),theme:(buffOf(SAVE.loadout)||{}).tag||null,ghosts:[],reserve:0,lo:SAVE.loadout.slice(),bk:0,low:(mapId==='dungeon'&&!SAVE.quests.q1&&SAVE.loadout.length===1&&SAVE.loadout[0]==='sjw'),map,path:mkPath(map.pts),deco,wave:0,waveActive:false,queue:[],spawnT:0,gap:.8,enemies:[],towers:[],summons:[],fx:vfxArr([]),texts:[],
-     yen:850,base:100,speed:(SAVE.speed>=1&&SAVE.speed<=3?SAVE.speed:1),skipT:-1,paused:false,auto:false,sel:null,placing:null,over:false,time:0,mx:-99,my:-99,kills:0,nextT:0,abilDirty:true,abtns:[],mgrOpen:false,mgrDirty:true,mgrRows:[],mgrAll:null,lhSel:null,mgrQuery:''};
+     yen:850,base:100,speed:(SAVE.speed>=1&&SAVE.speed<=3?SAVE.speed:1),skipT:-1,paused:false,auto:false,sel:null,placing:null,over:false,time:0,mx:-99,my:-99,kills:0,nextT:0,abilDirty:true,mgrOpen:false,mgrDirty:true,mgrRows:[],mgrAll:null,lhSel:null,mgrQuery:''};
   $('#lobby').hidden=true;$('#game').hidden=false;$('#over').hidden=true;$('#skipbox').hidden=true;$('#pausebox').hidden=true;$('#mgr').hidden=true;$('#side').hidden=false;$('#b-mgr').classList.remove('on');
   $('#b-speed').textContent=G.speed+'×';musicPlay(map.trial?'trials_n':map.raid?'raids_n':map.endless?'story':'story_t');   /* Raids and Trials have new loops; Story uses the old Trial theme; Infinity Castle keeps the original loop */{const tb=buffOf(SAVE.loadout);if(tb)setTimeout(()=>toast((tb.kind==='verse'?'Verse team: ':'Theme team: ')+tb.tag+' (+'+Math.round(tb.dmg*100)+'% DMG, -'+Math.round(tb.spa*100)+'% cooldown)'),300)}$('#b-auto').classList.remove('on');$('#b-pause').textContent='Pause';
-  buildHotbar();buildSide();buildAbil();updateHUD();
+  buildHotbar();buildSide();updateHUD();
   lastTs=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(frame);
 }
 function leaveGame(){save();musicStop();cancelAnimationFrame(raf);G=null;$('#pausebox').hidden=true;$('#mgr').hidden=true;$('#side').hidden=false;$('#game').hidden=true;$('#lobby').hidden=false;renderAll();window.scrollTo(0,0);menuMusic()}
@@ -1713,7 +1709,7 @@ function place(i,x,y,fromGhost){
   const t={def:d,mod:modOf(id),auto:!!SAVE.auto[id],autoUp:!!SAVE.autoUp[id],x,y,lvl:1,hp,hp0:hp,maxhp:hp,cd:.2,shots:0,kills:0,waves:0,spent:cost,down:false,mode:'first',cds:d.a.map(()=>5),buff:{t:0,dmg:0},critQ:0,pt:d.pulse?d.pulse[0]:0,
     dm:d.dps*d.spa,sp:d.spa,rg:d.rng,aD:0,aS:0,aR:0,gD:0,gS:0,gR:0,lD:0,lS:0,lR:0,cl:false,mD:1,mS:1,mR:1,stunT:0,silT:0,debD:0,debDt:0,debS:0,debSt:0,form:{t:0},shrine:{t:0},prot:null,rvD:0};
   G.towers.push(t);if(!fromGhost){if(G.mgrOpen)toggleMgr(false);G.sel=t;G.placing=null}G.abilDirty=true;G.mgrDirty=true;sfx('place');
-  buildSide();buildAbil();updateHotbar();
+  buildSide();updateHotbar();
 }
 function upCost(t){return Math.round(costOf(t.def)*.6*t.lvl)}
 function upgrade(t,auto){
@@ -1731,7 +1727,7 @@ function sell(t){
   if(G.paused){deny('Paused. Resume to sell.');return}
   G.towers.forEach(x=>{if(x.prot===t)x.prot=null});
   G.yen+=Math.round(t.spent*.7);G.towers=G.towers.filter(x=>x!==t);sfx('sell');
-  if(G.sel===t)G.sel=null;G.abilDirty=true;G.mgrDirty=true;buildSide();buildAbil();updateHotbar();
+  if(G.sel===t)G.sel=null;G.abilDirty=true;G.mgrDirty=true;buildSide();updateHotbar();
 }
 function toggleAutoUp(t){
   const v=!t.autoUp;SAVE.autoUp[t.def.id]=v;save();
@@ -1863,7 +1859,7 @@ function sellAll(){
   askConfirm('Sell all '+G.towers.length+' units for '+fmt(v)+'¥?',()=>sellAllNow(v));
 }
 function sellAllNow(v){if(!G||G.over)return;
-  G.yen+=v;G.towers=[];G.summons=[];G.ghosts=[];G.sel=null;G.lhSel=null;G.abilDirty=true;G.mgrDirty=true;buildSide();buildAbil();updateHotbar();sfx('sell');
+  G.yen+=v;G.towers=[];G.summons=[];G.ghosts=[];G.sel=null;G.lhSel=null;G.abilDirty=true;G.mgrDirty=true;buildSide();updateHotbar();sfx('sell');
 }
 const mTxt=x=>Math.abs(x-1)>.005?'* ('+x.toFixed(2)+'x)':'';
 const dmgStr=t=>fmt(t.dm)+mTxt(t.mD);
@@ -2291,36 +2287,6 @@ function pickSlot(i){
   if(G.mgrOpen)toggleMgr(false);G.placing=G.placing===i?null:i;G.sel=null;buildSide();updateHotbar();
 }
 
-function buildAbil(){
-  const el=$('#abil');el.innerHTML='';G.abtns=[];
-  G.towers.forEach(t=>{
-    if(!t.def.a.length)return;
-    const g=document.createElement('div');g.className='agrp';
-    const tog=document.createElement('button');tog.className='atog'+(t.auto?' on':'');tog.textContent=t.def.ic+' Auto '+(t.auto?'ON':'OFF');tog.title='Let this unit use its own abilities';
-    tog.onclick=()=>toggleAuto(t);g.appendChild(tog);
-    let any=false;
-    t.def.a.forEach((a,i)=>{
-      if(t.lvl<(a.u||1))return;any=true;
-      const b=document.createElement('button');b.className='abtn';b.title=a.d;
-      b.innerHTML=`<span class="cdfill"></span><span>${a.ic||t.def.ic}</span><span>${a.n}<br><small class="cdtxt"></small></span>`;
-      b.onclick=()=>{if(!canAct())return;useActive(t,i)};g.appendChild(b);
-      G.abtns.push({b,t,i,fill:b.querySelector('.cdfill'),txt:b.querySelector('.cdtxt')});
-      if(a.t==='lionheart'){const off=document.createElement('button');off.className='atog';off.textContent='Off';off.onclick=()=>{t.prot=null;G.lhSel=null};g.appendChild(off)}
-    });
-    if(!any){const s=document.createElement('span');s.className='mut';s.style.fontSize='12px';s.textContent='Ability unlocks at Lv '+Math.min.apply(null,t.def.a.map(a=>a.u||1));g.appendChild(s)}
-    el.appendChild(g);
-  });
-  G.abilDirty=false;
-}
-function updateAbil(){
-  for(const o of G.abtns){
-    const cd=o.t.cds[o.i],a=o.t.def.a[o.i],rdy=cd<=0&&!o.t.down;
-    if(a.t==='lionheart'){o.b.classList.toggle('rdy',!!o.t.prot);o.fill.style.width='0';o.txt.textContent=o.t.prot?'Protecting '+o.t.prot.def.n:(G.lhSel===o.t?'Choose an ally…':'Click to choose');continue}
-    o.b.classList.toggle('rdy',rdy);
-    o.fill.style.width=rdy?'0':clamp(cd/a.cd,0,1)*100+'%';
-    o.txt.textContent=o.t.down?'Down':rdy?'READY':Math.ceil(cd)+'s';
-  }
-}
 function sideActs(d,lvl,live){return d.a.map((a,i)=>{const ok=lvl===undefined||lvl>=(a.u||1);return `<p class="act ${ok?'':'lock'}"><b>${ok?'':'🔒 '}${a.n}</b> (${a.cd}s) ${ok?'':'· unlocks at Lv '+(a.u||1)}<br>${a.d}${live&&ok?`<br><button class="btn sd-ab" data-ab="${i}" style="margin-top:4px"></button>${a.t==='lionheart'?' <button class="atog" id="sd-lhoff">Off</button>':''}`:''}</p>`}).join('')}
 function buildSide(){
   const el=$('#side'),t=G.sel;
@@ -2384,8 +2350,8 @@ function updateHUD(){
   $('#h-yen').textContent='¥ '+fmt(G.yen);
   const b=$('#b-start');b.disabled=G.waveActive||G.over||G.paused;
   b.textContent=G.waveActive?'Wave in progress':(G.wave>0&&G.nextT>0?`Skip wait · wave ${G.wave+1} in ${Math.ceil(G.nextT)}s`:`Start wave ${G.wave+1}`);
-  if(G.abilDirty)buildAbil();
-  updateAbil();updateSide();updateHotbar();
+  
+  updateSide();updateHotbar();
   {const sb=$('#skipbox');
    if(!canSkip()){sb.hidden=true;sb.dataset.k=''}
    else{const k=G.auto?'a':'m';
@@ -2416,7 +2382,7 @@ $('#b-pause').onclick=()=>setPause(!G.paused);
 $('#p-res').onclick=()=>setPause(false);
 $('#p-quit').onclick=()=>{askConfirm('Quit this run? You will not get rewards.',leaveGame)};
 $('#b-mgr').onclick=()=>toggleMgr();
-$('#b-mute').onclick=toggleMute;
+$('#b-mute').onclick=toggleMute;$('#b-mmute').onclick=toggleMusicMute;
 $('#b-sellall').onclick=sellAll;
 $('#b-restart').onclick=()=>{if(G.over)startGame(G.map.id);else askConfirm('Restart this map from wave 1? You will not get rewards for this run.',()=>startGame(G.map.id))};
 $('#b-quit').onclick=()=>{if(G.over)leaveGame();else askConfirm('Quit this run? You will not get rewards.',leaveGame)};
