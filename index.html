@@ -172,6 +172,10 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
 .row{display:flex;gap:6px;margin-top:8px}
 .row .btn,.row .primary{flex:1;padding:6px 8px}
 .pas{color:var(--acc2)}
+.sdbtns{display:flex;gap:6px;margin:8px 0}.sdbtns .btn{flex:1;padding:6px 8px}
+.sdview h3{margin:10px 0 6px}.sdview .act{margin:8px 0}.sdview .act.lock{opacity:.7}
+#obtip{position:fixed;z-index:200;max-width:260px;background:var(--panel);color:var(--ink);border:3px solid var(--line);box-shadow:3px 3px 0 var(--shadow);border-radius:10px;padding:5px 10px;font-size:13px;font-weight:500;pointer-events:none}
+.logsec li.ob{cursor:help;text-decoration:underline dotted var(--mut);text-underline-offset:3px}
 .pasrow{margin:4px 0}.pasrow:first-child{margin-top:0}
 .act{border-left:4px solid var(--gold);padding-left:6px}
 .hotbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:12px}
@@ -198,7 +202,7 @@ button.pill{cursor:pointer;font:inherit;color:inherit}
 
 <div class="wrap" id="lobby">
   <header class="top">
-    <div class="logo">MALFUNCTION<span>TD</span><small>UPD 0.5 - Cursed Inventory</small></div>
+    <div class="logo">MALFUNCTION<span>TD</span><small>UPD 0.75 - Demonic Safety</small></div>
     <button class="pill" id="l-log" title="See what is new in this update">📜 Update Log<span id="l-logdot" class="logdot" hidden></span></button>
     <div class="pills"><span class="pill" id="gems"></span><span class="pill" id="sp"></span><button class="pill" id="l-mute" aria-label="Toggle sound">🔊</button><input type="range" id="l-vol" min="0" max="100" value="80" aria-label="Sound effects volume" title="Sound effects volume" style="width:90px;accent-color:var(--acc)"><button class="pill" id="l-mmute" aria-label="Toggle music" title="Mute / unmute music">🎵</button><input type="range" id="l-mvol" min="0" max="100" value="60" aria-label="Music volume" title="Music volume" style="width:90px;accent-color:var(--acc2)"><button class="pill" id="l-dev" title="Developer tools">🛠 Dev</button><button class="pill" id="l-help">❓ How to play</button></div>
   </header>
@@ -312,10 +316,10 @@ window.MUSIC_META={"story_t": {"frames": 661500, "rate": 44100}, "raids_n": {"fr
    ===================================================================== */
 const RAR={
   Rare:     {c:'#4aa3ff',rate:80},
-  Epic:     {c:'#b06cff',rate:12},
+  Epic:     {c:'#b06cff',rate:15},
   Legendary:{c:'#ffb23e',rate:5.5},
-  Mythic:   {c:'#ff4d6d',rate:2.49},
-  Secret:   {c:'#2ef0c8',rate:0.01},
+  Mythic:   {c:'#ff4d6d',rate:0.01},
+  Secret:   {c:'#2ef0c8',rate:0.001},
   Malfunction:{c:'#ff2bd6',rate:0}
 };
 const RN=Object.keys(RAR);
@@ -334,7 +338,7 @@ const UNITS=[];
    COST = ¥ to place the unit      MAX = most copies that can be placed at once
    AOE  = {r: splash radius in px, n: max enemies hit per attack}. {r:0,n:1} = single target; add all:true (n:99) to hit every enemy in range.
    DPS is simply DMG / SPA. Rarity only controls the colour, banner rates and pulls. Edit the numbers right in each unit's line. */
-const SINGLE=['sjw','sjw2','sjw3','sjw4','sjw5','ichi','ichi2','goku','yuji','yuji2','gon','meg','koby','gobta','chad','uryu','chaein','nobara','subaru','subaru2','igris','beru','saitama','garou','mumen','leorio','toji'];   // melee units (hit one enemy)
+const SINGLE=['sjw','sjw2','sjw3','sjw4','sjw5','ichi','ichi2','goku','yuji','yuji2','gon','meg','koby','gobta','chad','uryu','chaein','nobara','subaru','subaru2','igris','beru','saitama','garou','mumen','leorio','toji','denji','katana','aki','aki2'];   // melee units (hit one enemy)
 const isMelee=d=>SINGLE.includes(d.id)||!!d.pierce;
 function U(r,id,n,ref,ic,role,dmg,spa,rng,cost,max,aoe,x){UNITS.push(Object.assign({r,id,n,ref,ic,role,dmg,dps:dmg/spa,spa,rng,cost,maxPlace:max,aoe,a:[],p:''},x||{}))}
 
@@ -375,7 +379,7 @@ U('Epic','gobta2','Goba (Named)','Gobta','👺','dps',300,3,115,315,4,{r:26,n:2}
 // Upd 0.25 //
 U('Epic','killua','Yoyo','Killua Zoldyck','🪀','dps',380,3.8,125,450,2,{r:26,n:2},{buddy:{ids:['gon'],cd:.15},p:'Best Buddies: if Gon is in range, both units\u2019 cooldowns are 15% faster.',a:[{n:'Shock',d:'Applies \u201cShock\u201d to the strongest enemy in range.',cd:60,u:3,t:'shock'}]});
 // Upd 0.5 //
-U('Epic','leorio','Oreo-san','Leorio Paradinight','🍪','dps',350,3.5,125,465,4,{r:0,n:1},{remote:[3,2],p:'Remote Punch: every 3rd attack also hits the furthest enemy in range for 2× damage.'});
+U('Epic','leorio','Oreo-san','Leorio Paradinight','🍪','dps',350,3.5,125,465,4,{r:0,n:1},{remote:[3,2,.15],p:'Remote Punch: every 3rd attack, increases range by 15% and hits the furthest enemy in range for 2× damage.'});
 
 /* ---------- LEGENDARY ---------- */
 // Damage should range from 500-700  (Raw DPS=150) //
@@ -400,6 +404,14 @@ U('Legendary','vaccine','Plague Man','Vaccine Man','💉','dps',700,4.67,130,960
 // Upd 0.5 //
 U('Legendary','gojo','Six Eyes Student','Teen Satoru Gojo','🕶️','dps',700,4.67,135,1000,1,{r:34,n:3},{infinity:.35,p:'Infinity: slows all enemies in range by 35% (stacks with other slows).',a:[{n:'Blue',d:'5× DMG to every enemy in range.',cd:60,u:3,t:'nova',m:5}]});
 U('Legendary','geto','Curse Eater','Teen Suguru Geto','🔮','dps',690,4.6,130,1000,1,{r:34,n:3},{spirit:{ch:.25,m:.4,t:3},p:'Spirit Manipulation: enemies defeated by this unit have a 1 in 4 chance to join it as spirits for 3s.'});
+// Upd 0.75 //
+U('Legendary','kura','Scarlet Eyes','Kurapika','👀','dps',500,3.34,100,950,1,{r:0,n:1},{heal:.0002,p:'Chains (Thumb): Passively heals self and allies by 0.1% of their max HP every 5 seconds.',a:[{n:'Emperor Time',d:'Buffs all stats (DMG, Cooldown, Range, Crit Chance and Crit DMG) by 25% for 20 seconds. Removes 10 base stocks per use.',cd:100,u:5,t:'transform',dur:20,dmg:1.25,spa:.75,rng:1.25,crit:[.25,.25],base:10}]});
+U('Legendary','denji','Chainsaw Hunter','Denji','🐶','dps',600,4,110,1000,1,{r:0,n:1},{multi:3,killHeal:.1,formDot:'mutilate',p:'Immortal Blood: every kill heals 10% of this unit\u2019s max HP.',a:[{n:'Rev Up',d:'Turns into his \u201cChainsaw\u201d mode for 25s: 2× DMG, 15% faster, +15% range. Attacks apply Mutilate.',cd:90,u:3,t:'transform',dur:25,dmg:2,spa:.85,rng:1.15}]});
+U('Legendary','power','Blood Demon','Power','🩸','dps',650,4.34,130,960,2,{r:34,n:3},{dot:'bleed',hemo:.15,p:'Bleed: hits apply Bleed (60% DMG over 6s). Hemophobia: \u201cBleed\u201d type DOTs (Bleed and Mutilate) in range are 15% more effective.'});
+U('Legendary','himeno','Ghost Hunter','Himeno','👻','dps',550,3.67,135,1000,1,{r:34,n:3},{remote:[3,2,.15],remoteName:'Ghost Hand',p:'Ghost Hand: every 3rd attack, increases range by 15% and hits the furthest enemy in range for 2× DMG.',a:[{n:'Full Contract',d:'Deletes this unit (it can\u2019t be replaced for the rest of the match). Deals 100× DMG to the strongest enemy on the map.',cd:0,u:5,t:'contract',m:100}]});
+U('Legendary','katana','Sword Man','Katana Man','⚔️','dps',600,4,110,950,1,{r:0,n:1},{noBanner:true,multi:3,formDot:'bleed',hater:{id:'denji',dmg:.15,spa:.15},p:'Spiteful Hater: if Chainsaw Hunter (Denji) is in range, buffs own DMG and cooldown by 15%.',a:[{n:'Unsheathe',d:'Turns into his \u201cKatana\u201d mode for 25s: 2× DMG, 15% faster, +15% range. Attacks apply Bleed.',cd:90,u:3,t:'transform',dur:25,dmg:2,spa:.85,rng:1.15}]});
+U('Legendary','aki','Topknot Hunter','Aki Hayakawa','🦊','dps',700,4.67,115,1000,1,{r:0,n:1},{bossDmg:1.25,p:'Devil Hunter: deals 25% extra damage to boss enemies.',a:[{n:'Fox Devil',d:'5× DMG to every enemy in range.',cd:60,u:3,t:'nova',m:5},{n:'Curse Devil',d:'25× DMG to the strongest enemy on the map. Removes 30 base stocks per use.',cd:100,u:5,t:'beam',m:25,base:30}]});
+
 
 /* ---------- MYTHIC ---------- */
 // Damage should range from 800-1000 (Raw DPS=250) //
@@ -415,6 +427,8 @@ U('Mythic','meg2','Shadow Summoner','Megumi Fushiguro','🌑','dps',950,3.8,140,
 U('Mythic','sukuna','Malevolent Chef','Ryomen Sukuna','🍳','dps',1000,4,140,2090,2,{r:44,n:5},{evo:true,dot:'bleed',p:'Cleave and Dismantle: Applies Bleed (60% DMG over 6s).',
   a:[{n:'Shrine',d:'For 4s, attacks every enemy in range at once with 60% faster attacks.',cd:35,u:5,t:'shrine',dur:4,spa:.4}]});
 U('Mythic','igris','Blood Commander','Igris','🛡️','dps',1000,4,125,2375,1,{r:0,n:1},{noBanner:true,dot:'bleed',dot2:'mutilate',p:'Bleed: hits cause Bleed (60% DMG over 6s). Mutilate: hits also apply Mutilate (60% DMG over 4s).'});
+// Upd 0.75 //
+U('Mythic','aki2','Topknot Hunter (Future Eye)','Aki Hayakawa','🚬','dps',950,3.8,120,2100,1,{r:0,n:1},{evo:true,bossProof:true,p:'Future Contract: boss attacks do not affect this unit.',a:[{n:'Curse Devil',d:'30× DMG to the strongest enemy on the map. Removes 30 base stocks per use.',cd:130,u:5,t:'beam',m:30,base:30}]});
 U('Mythic','beru','Ant King','Beru','🐜','dps',1000,4,130,2375,1,{r:0,n:1},{noBanner:true,dot:'poison',dot2:'toxic',p:'Poison: hits poison enemies (80% DMG over 8s). Toxic: hits also apply Toxic (80% DMG over 6s).'});
 U('Mythic','sjw3','A-Rank Hunter','Sung Jinwoo','⚔️','dps',1000,4,130,3360,1,{r:0,n:1},{evo:true,grow:{kill:.02,cap:3},dot:'poison',p:'Poison: hits poison enemies (80% DMG over 8s).'});
 // Upd 0.25 //
@@ -505,7 +519,14 @@ const TAGS={
  killua:['Hunter x Hunter','Hunter','Nen User'],
  garou:['One-Punch Man','Villain','Martial Artist'],
  vaccine:['One-Punch Man','Villain','Monster','Potential'],
- mumen:['One-Punch Man','Hero Association']
+ mumen:['One-Punch Man','Hero Association'],
+ kura:['Hunter x Hunter','Hunter','Nen User'],
+ denji:['Chainsaw Man','Hunter','Public Safety','Hybrid'],
+ power:['Chainsaw Man','Hunter','Public Safety','Fiend'],
+ himeno:['Chainsaw Man','Hunter','Public Safety'],
+ katana:['Chainsaw Man','Hybrid'],
+ aki:['Chainsaw Man','Hunter','Public Safety'],
+ aki2:['Chainsaw Man','Hunter','Public Safety']
 };
 UNITS.forEach(u=>{u.tags=TAGS[u.id]||[]});
 
@@ -560,7 +581,10 @@ const ITEMS={
   tok_monarch:{n:'Monarch Token',ic:'🔱',d:"Raid currency from the Monarch Trial."},
   sixeyes:{n:'Six Eyes',ic:'👁️',d:"Bought in the Sorcerer's Tomb shop with Tomb Tokens. Evolves Six Eyes Student into Six Eyes Teacher (needs 6)."},
   spirit:{n:'Spirit',ic:'👻',d:"Bought in the Sorcerer's Tomb shop with Tomb Tokens. Evolves Curse Eater into Evil Curse Eater (needs 10)."},
-  tok_tomb:{n:'Tomb Token',ic:'⚰️',d:"Raid currency from the Sorcerer's Tomb raid."}
+  tok_tomb:{n:'Tomb Token',ic:'⚰️',d:"Raid currency from the Sorcerer's Tomb raid."},
+  tok_train:{n:'Train Token',ic:'🚆',d:'Raid currency from the Train Fight Raid.'},
+  cig:{n:'Final Cigarette',ic:'🚬',d:"Obtained when Ghost Hunter uses Full Contract inside Topknot Hunter's range. Evolves Topknot Hunter (with a Future Contract)."},
+  contract:{n:'Future Contract',ic:'📑',d:'Bought in the Train Fight shop with Train Tokens. Evolves Topknot Hunter (with a Final Cigarette).'}
 };
 const EVO={   // each unit can have several evolution options
   ichi:  [{to:'ichi2',  item:'badge', n:5}],
@@ -575,7 +599,8 @@ const EVO={   // each unit can have several evolution options
   goku:  [{to:'goku2',  item:'dball', n:7}],
   subaru:[{to:'subaru2',item:'witch', n:5}],
   gojo:[{to:'gojo2',item:'sixeyes',n:6}],   // Six Eyes Student -> Six Eyes Teacher
-  geto:[{to:'geto2',item:'spirit',n:10}]    // Curse Eater -> Evil Curse Eater
+  geto:[{to:'geto2',item:'spirit',n:10}],    // Curse Eater -> Evil Curse Eater
+  aki:[{to:'aki2',items:[['cig',1],['contract',1]]}]   // Topknot Hunter -> Topknot Hunter (Future Eye)
 };
 const EVO_FROM={};Object.keys(EVO).forEach(k=>EVO[k].forEach(o=>{EVO_FROM[o.to]=k}));
 
@@ -586,7 +611,7 @@ function clash(team,id){return team.some(x=>x!==id&&(famOf(x)===famOf(id)||(FUSE
 const THEME={dmg:.10,spa:.05};   // buff for a Theme Team (slots 1-5 share a Tag)
 function themeOf(L){const f=L.slice(0,5);if(f.length<5||f.some(id=>!DEF[id]))return null;return DEF[f[0]].tags.find(t=>f.every(id=>DEF[id].tags.includes(t)))||null}
 const VERSE={dmg:.2,spa:.15};   // buff for a Verse Team (slots 1-5 share an anime-universe Tag): a bigger Theme Team
-const VERSES=['Solo Leveling','Bleach','One Piece','Jujutsu Kaisen','Dragon Ball','Tensura','Hunter x Hunter','Black Clover','Re:Zero','One-Punch Man'];   // the anime-universe Tags (every unit lists its anime first)
+const VERSES=['Solo Leveling','Bleach','One Piece','Jujutsu Kaisen','Dragon Ball','Tensura','Hunter x Hunter','Black Clover','Re:Zero','One-Punch Man','Chainsaw Man'];   // the anime-universe Tags (every unit lists its anime first)
 const verseOfUnit=u=>VERSES.find(v=>u.tags.includes(v))||null;
 function verseOf(L){const f=L.slice(0,5);if(f.length<5||f.some(id=>!DEF[id]))return null;return VERSES.find(v=>f.every(id=>DEF[id].tags.includes(v)))||null}
 function buffOf(L){const v=verseOf(L);if(v)return{kind:'verse',tag:v,dmg:VERSE.dmg,spa:VERSE.spa};const t=themeOf(L);return t?{kind:'theme',tag:t,dmg:THEME.dmg,spa:THEME.spa}:null}   // Verse beats Theme; they never stack
@@ -622,13 +647,21 @@ function claimBQ(id){
   if(q.rew.crystal)SAVE.items.crystal=item('crystal')+q.rew.crystal;
   save();renderAll();toast('Quest claimed: '+q.n);sfx('evolve');
 }
+function claimAllBQ(){   // claims every finished Basic Quest (repeating a quest while its progress still covers another claim)
+  let g=0,c=0,n=0;
+  for(const q of BQ){let k=0;while(bqProg(q)>=q.goal&&k++<1000){SAVE.bq=SAVE.bq||{};SAVE.bq[q.id]=(SAVE.bq[q.id]||0)+q.goal;g+=q.rew.gems||0;c+=q.rew.crystal||0;n++}}
+  if(!n)return;
+  SAVE.gems+=g;if(c)SAVE.items.crystal=item('crystal')+c;
+  save();renderAll();toast('Claimed '+n+' quest'+(n>1?'s':'')+': '+[g?g.toLocaleString()+' 💎':'',c?c+' 🔮':''].filter(Boolean).join(' + '));sfx('evolve');
+}
 const SHOPQ={badge:5,finger:5,seal:5,dball:7,witch:5,sixeyes:6,spirit:10};   // evolution items come in the amount needed for one evolution (5 Fingers covers Yuji and Sukuna's cheaper one)
 const SHOP=[];[['tok_special',['badge','finger']],['tok_island',['seal','dball']],['tok_monarch',['witch','core']]].forEach(([t,l])=>{SHOP.push({t,i:'crystal',c:2});l.forEach(i=>SHOP.push({t,i,c:7,q:SHOPQ[i]||1}))});
 SHOP.push({t:'tok_special',i:'ahjin',c:25});
 SHOP.push({t:'tok_slime',i:'crystal',c:2});SHOP.push({t:'tok_slime',i:'nametag',c:5});   // Slime Raid shop
 SHOP.push({t:'tok_hero',i:'crystal',c:2});   // Hero Association shop
 SHOP.push({t:'tok_tomb',i:'crystal',c:2});SHOP.push({t:'tok_tomb',i:'sixeyes',c:7,q:SHOPQ.sixeyes});SHOP.push({t:'tok_tomb',i:'spirit',c:7,q:SHOPQ.spirit});   // Sorcerer's Tomb shop
-['tok_special','tok_island','tok_monarch','tok_slime','tok_hero','tok_tomb'].forEach(t=>SHOP.push({t,i:'scrystal',c:15}));   // Star Crystals: 15 tokens in every raid shop
+SHOP.push({t:'tok_train',i:'crystal',c:2});SHOP.push({t:'tok_train',i:'contract',c:25});   // Train Fight shop
+['tok_special','tok_island','tok_monarch','tok_slime','tok_hero','tok_tomb','tok_train'].forEach(t=>SHOP.push({t,i:'scrystal',c:15}));   // Star Crystals: 15 tokens in every raid shop
 const INTERMISSION=8;   // seconds before the next wave is forced to start
 
 /* ---------- Maps (hp = difficulty multiplier, drops = what a clear can give) ---------- */
@@ -665,6 +698,9 @@ const MAPS=[
   {id:'citadel',name:'Demon Citadel',desc:'A spiral to the throne. Bosses galore.',waves:20,hp:1.76,gems:800,bossName:'Demon General',
    drops:[{id:'crystal',p:1,min:3,max:4}],
    pts:[[-30,60],[840,60],[840,480],[60,480],[60,170],[730,170],[730,370],[170,370],[170,270],[450,270]],bg:'#3a1f26',dot:'#4a2630',edge:'#1c0d11',road:'#6b3a3a',dash:'#a15b5b'},
+  {id:'storehouse',name:'Dirty Storehouse',desc:'Crates, rust and a very bad smell. Something shambles between the shelves.',waves:20,hp:1.85,gems:850,bossName:'Zombie Devil',
+   drops:[{id:'crystal',p:1,min:3,max:4}],
+   pts:[[-30,90],[200,90],[200,300],[420,300],[420,90],[640,90],[640,430],[300,430],[300,500],[930,500]],bg:'#2f2b26',dot:'#3a352e',edge:'#14110e',road:'#8a7f6a',dash:'#c9bfa5'},
   {id:'infinity',name:'Infinity Castle',desc:'Endless waves. How far can you get?',waves:Infinity,endless:true,hp:1.0,gems:0,bossName:'Castle Lord',
    drops:[],
    pts:[[-30,270],[150,270],[150,80],[750,80],[750,270],[330,270],[330,430],[750,430],[750,500],[930,500]],bg:'#1d1a2e',dot:'#2a2545',edge:'#0b0916',road:'#59467d',dash:'#a68bd6'}
@@ -680,6 +716,7 @@ const INF=MAPS.find(m=>m.id==='infinity');
  {id:'slimeraid',name:'Slime Raid',desc:'The Tempest Federation is under siege. Earn your Nametags.',waves:30,hp:1.17,gems:1000,bossName:'Demon Lord',pts:[[-30,480],[780,480],[780,60],[120,60],[120,380],[560,380],[560,200],[300,200]],bg:'#1f3a3f',dot:'#284a50',edge:'#0c1c1f',road:'#5fb5b0',dash:'#b4f0ea',drops:[{id:'tok_slime',p:1,min:5,max:8}]},
  {id:'hero',name:'Hero Association',desc:'A Dragon-level disaster is bearing down on City Z. Every class of hero is on call, and the strongest one is bored.',waves:30,hp:1.26,gems:1200,bossName:'Dragon-Level Monster',moves:['meteor'],pts:[[-30,300],[220,300],[220,90],[460,90],[460,430],[700,430],[700,160],[930,160]],bg:'#252b38',dot:'#2f3747',edge:'#10141c',road:'#6b7385',dash:'#ffd23f',drops:[{unit:'saitama',p:.33,pity:3},{id:'tok_hero',p:1,min:5,max:8}]},
  {id:'tomb',name:"Sorcerer's Tomb",desc:'A sealed vault of forbidden sorcery. Its guardians regenerate and shield themselves, and a hired assassin waits at the end.',waves:30,hp:1.35,gems:1300,bossName:'Sorcerer Killer',regen:true,regenP:.4,shield:1,shieldP:.4,pts:[[-30,450],[170,450],[170,130],[380,130],[380,400],[590,400],[590,130],[800,130],[800,450],[930,450]],bg:'#1b1626',dot:'#251d36',edge:'#0a0710',road:'#5a4a73',dash:'#b79ad9',drops:[{unit:'toji',p:.33,pity:3},{id:'tok_tomb',p:1,min:5,max:8}]},
+ {id:'train',name:'Train Fight Raid',desc:'A runaway train, a sword and a grudge. Cut through every carriage.',waves:30,hp:1.44,gems:1400,bossName:'Katana Man',pts:[[-30,90],[780,90],[780,210],[120,210],[120,330],[780,330],[780,440],[330,440],[330,520]],bg:'#2a2d33',dot:'#33373f',edge:'#0f1114',road:'#8e6b4a',dash:'#e0b070',drops:[{unit:'katana',p:.33,pity:3},{id:'tok_train',p:1,min:5,max:8}]},
  {id:'monarch',cm:1.5,bm:2,name:'Monarch Trial',desc:'The final test. Bring your shadows.',waves:50,hp:1.0,gems:1500,bossName:'Monarch',need:'q4',trial:true,pts:[[-30,70],[820,70],[820,230],[80,230],[80,390],[820,390],[820,500],[930,500]],bg:'#0d0a16',dot:'#161227',edge:'#05030a',road:'#2a1f4a',dash:'#6b3fb0',drops:[{id:'cup',p:1,min:1,max:1},{id:'tok_monarch',p:1,min:5,max:8}]}
 ].forEach(r=>MAPS.push(Object.assign({},INF,{endless:false,raid:true},r)));
 /* ---------- System paths: 7 themed paths of 4 steps. You choose the path, then each 1 crystal buys the next step. ---------- */
@@ -950,13 +987,14 @@ function renderQuests(){
   const has=['sjw','sjw2','sjw3','sjw4','sjw5'].some(k=>SAVE.inv[k])||SAVE.quests.q1,cur=QS.findIndex(q=>!SAVE.quests[q.id]);
   const mal=has?'<div class="panel"><h2>Shadow\'s Legacy</h2><p class="mut" style="margin:0 0 6px">Malfunction Quest</p>'+QS.map((q,i)=>(cur<0||i<=cur)?`<p class="act"><b>${SAVE.quests[q.id]?'✔':'▶'} Quest ${i+1}: ${q.n}</b><br>${q.d}</p>`:'').join('')+'</div>':'';   // Malfunction Quests always sit above the Basic Quests
   const rw=r=>[r.crystal?r.crystal+' 🔮 System Crystal'+(r.crystal>1?'s':''):'',r.gems?r.gems.toLocaleString()+' 💎':''].filter(Boolean).join(' + ');
-  const bas='<div class="panel"><h2>Basic Quests</h2><p class="mut" style="margin:0 0 6px">Repeatable. Progress carries across runs. Claim rewards yourself when ready.</p>'+BQ.map(q=>{
+  const bas='<div class="panel"><h2>Basic Quests</h2><p class="mut" style="margin:0 0 6px">Repeatable. Progress carries across runs. Claim rewards yourself when ready.</p><button class="primary" id="claimall" style="margin:0 0 10px" '+(BQ.some(q=>bqProg(q)>=q.goal)?'':'disabled')+'>Claim All</button>'+BQ.map(q=>{
     const p=bqProg(q),done=p>=q.goal,pc=Math.min(100,100*p/q.goal);
     return `<div class="act"><b>${q.n}</b> · ${q.d}<br><span class="mut">Reward: ${rw(q.rew)}</span>
       <div style="height:8px;background:#0003;border-radius:4px;margin:6px 0;overflow:hidden"><div style="height:100%;width:${pc}%;background:${done?'var(--good)':'var(--acc2)'}"></div></div>
       <div class="row" style="align-items:center;gap:10px"><span>${Math.min(p,q.goal).toLocaleString()} / ${q.goal.toLocaleString()}</span><button class="${done?'primary':'btn'}" data-bq="${q.id}" ${done?'':'disabled'}>${done?'Claim':'In progress'}</button></div></div>`}).join('')+'</div>';
   $('#questbox').innerHTML=mal+bas;
   $$('#questbox [data-bq]').forEach(b=>b.onclick=()=>claimBQ(b.dataset.bq));
+  $('#claimall').onclick=claimAllBQ;
 }
 function renderTeams(){
   SAVE.teams=SAVE.teams||[];
@@ -977,6 +1015,7 @@ function renderShop(){   // sidebar of raid shops + one full shop page for the s
 function evoReqs(id,ev){
   const L=[];let ok=true;const ck=(c,s)=>{L.push((c?'✅ ':'❌ ')+s);if(!c)ok=false};
   if(ev.item)ck(item(ev.item)>=ev.n,`${ev.n}× ${ITEMS[ev.item].ic} ${ITEMS[ev.item].n} (have ${item(ev.item)})`);
+  (ev.items||[]).forEach(([k,n])=>ck(item(k)>=n,`${n}× ${ITEMS[k].ic} ${ITEMS[k].n} (have ${item(k)})`));
   if(ev.kills)ck((SAVE.kills[id]||0)>=ev.kills,`Lifetime kills ${SAVE.kills[id]||0}/${ev.kills}`);
   if(ev.quest)ck(!!SAVE.quests[ev.quest],'Quest: '+QS.find(q=>q.id===ev.quest).n);
   (ev.sac||[]).forEach(s=>ck(!!SAVE.inv[s],'Sacrifice '+DEF[s].n));
@@ -1003,7 +1042,7 @@ function renderIndex(){   // every unit in the game: discovered ones show, the r
 }
 function renderSummon(){
   $('#rates').innerHTML=RN.filter(k=>RAR[k].rate).map(k=>`<span style="color:${RAR[k].c}">${k} ${RAR[k].rate}%</span>`).join('');
-  $('#pity').innerHTML=`Mythic+ guaranteed in <b>${Math.max(0,PITY_M-SAVE.pity)}</b> summons · Secret guaranteed in <b>${Math.max(0,PITY_S-SAVE.spity)}</b>.`;
+  $('#pity').innerHTML=`Mythic guaranteed in <b>${Math.max(0,PITY_M-SAVE.pity)}</b> summons · Secret guaranteed in <b>${Math.max(0,PITY_S-SAVE.spity)}</b>.`;
   $('#pullfree').hidden=SAVE.freeDone;
   const pc=pullCost(),mx=Math.floor(SAVE.gems/pc);
   $('#pull1').textContent='Summon ×1 · '+pc+' 💎';$('#pull10').textContent='Summon ×10 · '+pc*10+' 💎';$('#pullmax').textContent='Max Summon ×'+mx+' · '+mx*pc+' 💎';
@@ -1171,6 +1210,7 @@ function evolve(id,to){
   if(SAVE.inv[ev.to]&&SAVE.inv[id]<=1){deny('Nothing to gain: you already have '+DEF[ev.to].n);return}   // pre-evo stays behind at 1★ now, so re-evolving would only waste items
   if(!evoReqs(id,ev).ok){toast('Requirements not met');return}
   if(ev.item)SAVE.items[ev.item]-=ev.n;
+  (ev.items||[]).forEach(([k,n])=>{SAVE.items[k]-=n});
   (ev.sac||[]).forEach(s=>{delete SAVE.inv[s];SAVE.loadout=SAVE.loadout.filter(x=>x!==s)});
   if(SAVE.kills[id]){SAVE.kills[ev.to]=(SAVE.kills[ev.to]||0)+SAVE.kills[id]}
   const had=SAVE.inv[ev.to];SAVE.inv[ev.to]=had?had+SAVE.inv[id]-1:SAVE.inv[id];SAVE.inv[id]=1;   // the pre-evo stays in your collection at 1★   // already own the evolved form: the old unit's dupes are added to it
@@ -1188,7 +1228,7 @@ function evolve(id,to){
 }
 
 /* ---------- Gacha (evolved forms are not in the pool) ---------- */
-const PITY_M=40,PITY_S=200;   // Mythic+ guaranteed within 40 summons, Secret within 200
+const PITY_M=100,PITY_S=1000;   // a Mythic is guaranteed within 100 summons, a Secret within 1000
 const FEAT_W=4,BANCOST={std:100,sel:150,star:130};let BAN='std',ROLLMODE='std';const pullCost=()=>BANCOST[BAN];   // three banners: Standard, Selection (boosted Mythic), Star (dupes)
 function pickStar(pool){   // owned units below max stars are 4x as likely; maxed units are gone from the banner
   const L=pool.filter(u=>!SAVE.inv[u.id]||SAVE.inv[u.id]<6),src=L.length?L:pool,w=src.map(u=>SAVE.inv[u.id]?4:1);
@@ -1206,7 +1246,7 @@ function rollOne(minR){
   bump('summons');SAVE.pulls++;SAVE.pity++;SAVE.spity++;
   let r='Rare';
   if(SAVE.spity>=PITY_S)r='Secret';
-  else if(SAVE.pity>=PITY_M)r=Math.random()<.85?'Mythic':'Secret';
+  else if(SAVE.pity>=PITY_M)r='Mythic';   // Mythic pity only ever gives a Mythic
   else{let x=Math.random()*100,acc=0;for(const k of RN){acc+=RAR[k].rate;if(x<acc){r=k;break}}}
   if(minR&&RN.indexOf(r)<RN.indexOf(minR))r=minR;
   if(r==='Mythic'||r==='Secret')SAVE.pity=0;
@@ -1221,9 +1261,9 @@ function showPulls(res){
   clearTimeout(PT);PT=setTimeout(clearPulls,20000);   // pull display fades away after 20s, or when you leave the tab
   if(res.length<=30){showPulls0(res);return}
   const cnt={};res.forEach(r=>cnt[r.u.r]=(cnt[r.u.r]||0)+1);
-  const top=res.filter(r=>RN.indexOf(r.u.r)>=2).slice(0,60);
+  const top=res.filter(r=>RN.indexOf(r.u.r)>=RN.indexOf('Mythic')).slice(0,60);   // big batches only show Mythic and better
   showPulls0(top);
-  $('#pulls').insertAdjacentHTML('afterbegin','<p style="grid-column:1/-1;margin:0"><b>'+res.length+' summons:</b> '+RN.filter(k=>cnt[k]).map(k=>'<span style="color:'+RAR[k].c+'">'+k+' ×'+cnt[k]+'</span>').join(' · ')+(top.length?' (Legendary+ shown below)':' (no Legendary or better)')+'</p>');
+  $('#pulls').insertAdjacentHTML('afterbegin','<p style="grid-column:1/-1;margin:0"><b>'+res.length+' summons:</b> '+RN.filter(k=>cnt[k]).map(k=>'<span style="color:'+RAR[k].c+'">'+k+' ×'+cnt[k]+'</span>').join(' · ')+(top.length?' (Mythic+ shown below)':' (no Mythic or better)')+'</p>');
 }
 function showPulls0(res){
   $('#pulls').innerHTML=res.map((r,i)=>{
@@ -1250,7 +1290,14 @@ function freePull(){
 
 /* ---------- Update Log (newest entry first: add a new object at the top for each update) ---------- */
 const UPDATE_LOG=[
- {v:'Update 0.5',sub:'Cursed Inventory',sections:[
+ {v:'Update 0.75',sub:'Demonic Safety (Oct 20th, 2026)',sections:[
+  {h:'7 *NEW* Units',items:['Scarlet Eyes [Legendary] - Kurapika','Chainsaw Hunter [Legendary] - Denji','Blood Demon [Legendary] - Power','Ghost Hunter [Legendary] - Himeno','Sword Man [Legendary] - Katana Man','Topknot Hunter [Legendary] - Aki Hayakawa','Topknot Hunter (Future Eye) [Mythic] - Aki Hayakawa (Evolution)']},
+  {h:'*NEW* Story',items:['Dirty Storehouse']},
+  {h:'*NEW* Raid',items:['Train Fight Raid']},
+  {h:'QOL UPDATE',items:['The in-game unit description now has a “Passive(s)” button, instead of showing the passive all the time. Clicking it replaces the box, fully detailing passive abilities. Units with active abilities also get an “Active(s)” button that fully details each active ability.','Hovering over a unit in the Update Log now shows where that unit is obtained. (Ex: Unit - Obtained from banner, Unit - Evolves from Preevo, Unit - Obtainable from X Map)']},
+  {h:'Other Notes',items:['Final Cigarette is obtained when using “Full Contract” inside Topknot Hunter’s range.']}
+ ]},
+ {v:'Update 0.5',sub:'Cursed Inventory (Oct 19th, 2026)',sections:[
   {h:'4 *NEW* Units + 2 Evos',items:['Oreo-san [Epic] - Leorio Paradinight','Six Eyes Student [Legendary] - Teen Satoru Gojo','Curse Eater [Legendary] - Teen Suguru Geto','Six Eyes Teacher [Mythic] - Satoru Gojo (Evolution)','Evil Curse Eater [Mythic] - Suguru Geto (Evolution)','Broke Assassin [Secret] - Toji Fushiguro (Sorcerer’s Tomb Raid)']},
   {h:'*NEW* Raid',items:['Sorcerer’s Tomb']},
   {h:'*NEW* Enemy Types',items:['Regenerating Enemies - heal 1% max HP per second (stopped by Bleed and Mutilate)','Shielded Enemies - each shield absorbs a hit and lets only 20% of its damage through (Soul Hit ignores shields)']},
@@ -1260,14 +1307,14 @@ const UPDATE_LOG=[
   {h:'Changes',items:['The old Six Eyes Teacher is now Six Eyes Student [Legendary] and is on the banner. Six Eyes Teacher [Mythic] is no longer on the banner and must be evolved (6 Six Eyes).','“Infinity” is now its own slow effect and stacks with all other slows.']},
   {h: 'HUGE NERFS', items:['All units have been heavily nerfed. Raw damage for units is now:','[Rare] - 100-200 (50 DPS)','[Epic] - 300-400 (100 DPS)','[Legendary] - 500-700 (150 DPS)', '[Mythic] - 800-1000 (250 DPS)','[Secret] - 2000-2500 (350 DPS)','[Malfuction] - 3000-3500 (500 DPS)']}
  ]},
- {v:'Update 0.25',sub:'One Punch!',sections:[
+ {v:'Update 0.25',sub:'One Punch! (Oct. 18th, 2026)',sections:[
   {h:'8 *NEW* Units',items:['Licenceless Hero [Rare] - Mumen Rider','Fraudulent Hero [Rare] - King','Yoyo [Epic] - Killua Zoldyck','Hero Killer [Legendary] - Garou','Demon Cyborg [Legendary] - Genos','Plague Man [Legendary] - Vaccine Man','Terrible Tornado [Mythic] - Tatsumaki','Caped Baldy [Mythic] - Saitama']},
   {h:'*NEW* Raid',items:['Hero Association']},
   {h:'*NEW* Status Effects',items:['“Shock” - Stuns enemy for 3 seconds every 5 seconds (lasts 15 seconds) (10 second cooldown before it can be applied again from any source)','“Fear” - Slows enemy down by 10% (Stacks with other slow effects), and increases damage taken from all sources by 15%. (lasts 30 seconds) (20 second cooldown before it can be applied again from any source)','“Freeze” - Prevents enemy movement for 3 seconds, and makes them 10% slower for 10 seconds (Stacks with other forms of slow) (20 second cooldown before it can be applied again from any source)','“Mutilate” - 60% of unit damage over 4 seconds','“Toxic” - 80% of unit damage over 6 seconds']},
   {h:'*NEW* Basic Quests',items:['Repeatable quests for in-game rewards!','Kill 50 Boss Enemies (Reward: 3 System Crystals, 1k Summon Gems)','Summon 50 Units (Reward: 1 System Crystal)','Clear 5 Story Maps (Reward: 5 System Crystals, 1k Gems)','Kill 1,000 Enemies (Reward: 3 System Crystals, 1k Summon Gems)']},
   {h:'QOL Updates',items:['When evolving a unit, their pre-evo will still show up in the unit index and maps where they are available, no longer hiding them until reobtainment.']}
  ]},
- {v:'Update 0',sub:'Release',sections:[
+ {v:'Update 0',sub:'Release (Oct. 14th, 2026)',sections:[
   {h:'56 Units!',items:['56 UNITS!!!']},
   {h:'10 Story Maps',items:['Training Plains','Soul Society','Cursed Alley','Roswaal’s Mansion','Planet Namek','Slime Labyrinth','Hidden Leaf Village','Marineford','Double Dungeon','Demon Citadel']},
   {h:'Endless Map',items:['Infinity Castle']},
@@ -1277,6 +1324,24 @@ const UPDATE_LOG=[
  ]}
 ];
 const logKey=()=>UPDATE_LOG[0].v+(UPDATE_LOG[0].rev?'.r'+UPDATE_LOG[0].rev:'');
+function obtainTxt(t){   // where a unit from the log can be got, worked out from the game data (banner / evolution / map or raid drop)
+  const u=UNITS.find(x=>x.n===String(t).split(' [')[0].trim());if(!u)return '';
+  let w;
+  if(u.evo&&EVO_FROM[u.id])w='Evolves from '+DEF[EVO_FROM[u.id]].n;
+  else{const ms=MAPS.filter(m=>(m.drops||[]).some(d=>d.unit===u.id));
+    if(ms.length)w='Obtainable from '+ms.map(m=>m.name+(m.raid?(/Raid/.test(m.name)?'':' Raid'):' Map')).join(' or ');
+    else if(!u.noBanner&&!u.evo)w='Obtained from banner';else return ''}
+  return u.n+' - '+w}
+const escA=x=>String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+function logTip(){   // little hover tooltip for units in the Update Log (tap works on touch screens)
+  let tip=$('#obtip');if(!tip){tip=document.createElement('div');tip.id='obtip';tip.hidden=true;document.body.appendChild(tip)}
+  const show=(li,x,y)=>{tip.textContent=li.dataset.ob;tip.hidden=false;const w=tip.offsetWidth,h=tip.offsetHeight;tip.style.left=Math.max(6,Math.min(innerWidth-w-6,x+12))+'px';tip.style.top=Math.max(6,Math.min(innerHeight-h-6,y+16))+'px'};
+  const m=$('#modal');if(m._ob)return;m._ob=1;   // added once, next to the modal's own click-outside-to-close handler
+  const find=e=>e.target.closest&&e.target.closest('li[data-ob]');
+  const mv=e=>{const li=find(e);if(li)show(li,e.clientX,e.clientY);else tip.hidden=true};
+  m.addEventListener('mouseover',mv);m.addEventListener('mousemove',mv);m.addEventListener('mouseleave',()=>tip.hidden=true);
+  m.addEventListener('click',e=>{const li=find(e);if(li&&!matchMedia('(hover:hover)').matches)show(li,e.clientX,e.clientY);else tip.hidden=true});
+}
 const rarTxt=t=>t.replace(/\[(Rare|Epic|Legendary|Mythic|Secret|Malfunction)\]/g,(m,r)=>`[<b style="color:${RAR[r].c}">${r}</b>]`);   // rarity name in the rarity's colour, brackets keep the text colour
 function logDot(){const d=$('#l-logdot');if(d)d.hidden=(SAVE.logSeen===logKey())}
 function openLog(){   // pick an update from the list (newest first, oldest last)
@@ -1286,9 +1351,9 @@ function openLog(){   // pick an update from the list (newest first, oldest last
     m.innerHTML='<div class="panel" style="max-width:640px"><h2 style="font-size:34px">Update Log</h2>'+
       '<div class="logtabs">'+UPDATE_LOG.map((x,i)=>`<button class="btn logtab ${i===sel?'on':''}" data-lg="${i}">${x.v}${i===0?'<span class="new">NEW</span>':''}</button>`).join('')+'</div>'+
       `<div class="logv"><h3 style="margin:10px 0 0;font-size:26px">${u.v}</h3><span class="mut">${u.sub||''}</span></div>`+
-      u.sections.map(x=>`<div class="logsec"><h4>${x.h}</h4><ul>${x.items.map(t=>'<li>'+rarTxt(t)+'</li>').join('')}</ul></div>`).join('')+
+      u.sections.map(x=>`<div class="logsec"><h4>${x.h}</h4><ul>${x.items.map(t=>{const ob=obtainTxt(t);return '<li'+(ob?' class="ob" data-ob="'+escA(ob)+'"':'')+'>'+rarTxt(t)+'</li>'}).join('')}</ul></div>`).join('')+
       '<div class="row"><button class="btn" id="lg-x">Close</button></div></div>';
-    $('#lg-x').onclick=()=>m.hidden=true;
+    $('#lg-x').onclick=()=>{m.hidden=true;const tp=$('#obtip');if(tp)tp.hidden=true};logTip();
     $$('#modal [data-lg]').forEach(b=>{b.onclick=()=>{sel=+b.dataset.lg;draw()}});
   };
   draw();
@@ -1464,7 +1529,8 @@ function spawn(type){
 /* ---------- boss attacks ---------- */
 const LH_SHARE=.75;   // Lion Heart: Subaru takes 75% of the damage, the protected ally only 25%
 function lhOf(t){for(const s of G.towers){if(s!==t&&!s.down&&s.prot===t&&s.def.lionheart)return s}return null}   // the living Subaru shielding t, if any
-function hurt(t,dmg){const s=lhOf(t);if(s){hurt0(s,dmg*LH_SHARE);hurt0(t,dmg*(1-LH_SHARE))}else hurt0(t,dmg)}
+let BOSSMOVE=false;
+function hurt(t,dmg){if(BOSSMOVE&&t.def.bossProof)return;const s=lhOf(t);if(s){hurt0(s,dmg*LH_SHARE);hurt0(t,dmg*(1-LH_SHARE))}else hurt0(t,dmg)}
 function hurt0(t,dmg){
   if(t.down)return;t.hp-=dmg;addText(t.x,t.y-18,'-'+Math.round(dmg),'#ff6a6a',.7);
   if(t.hp<=0){t.hp=0;t.down=true;sfx('down');addText(t.x,t.y-30,'DOWN!','#ff4d6d',1.2,true)}
@@ -1487,7 +1553,10 @@ function bossMove(e){
   const MV=BOSS_MOVES.concat((G.map.moves||[]).map(k=>EXTRA_MOVES[k]).filter(Boolean));
   let r=Math.random()*MV.reduce((a,m)=>a+m.w,0),mv=MV[0];
   for(const m of MV){r-=m.w;if(r<=0){mv=m;break}}
-  mv.f(e);G.bossMsg={s:e.def.boss&&!e.mini&&G.map.bossName?G.map.bossName+' uses '+mv.n+'!':mv.n+'!',t:2.4};
+  const keep=G.towers.filter(t=>t.def.bossProof).map(t=>[t,t.stunT,t.debD,t.debDt,t.debS,t.debSt,t.silT]);   // Future Contract: boss moves don't affect these units
+  BOSSMOVE=true;try{mv.f(e)}finally{BOSSMOVE=false}
+  keep.forEach(k=>{const t=k[0];t.stunT=k[1];t.debD=k[2];t.debDt=k[3];t.debS=k[4];t.debSt=k[5];t.silT=k[6]});
+  G.bossMsg={s:e.def.boss&&!e.mini&&G.map.bossName?G.map.bossName+' uses '+mv.n+'!':mv.n+'!',t:2.4};
   G.fx.push({k:'flash',t:.2,T:.2,col:'#ff3d3d'});sfx('down');
 }
 function endWave(){
@@ -1570,6 +1639,7 @@ function place(i,x,y,fromGhost){
   const d=DEF[id],cost=costOf(d);
   if(G.paused){deny('Paused. Resume to place units.');return}
   if(G.towers.filter(t=>t.def.id===id).length>=maxOf(d)){deny(`Max ${maxOf(d)} of ${d.n} on the map`);return}
+  if(G.gone&&G.gone[id]){deny(`${d.n} can't be replaced this match`);return}
   if(G.yen<cost){if(!fromGhost)addGhost(i,x,y);return}
   if(!validPos(x,y)){if(!fromGhost)deny("Can't place there");return}
   G.yen-=cost;
@@ -1685,6 +1755,8 @@ function calc(t){
   if(d.blood)own*=1+bloodBuff(t);
   if(d.courage&&hurtT(t))own*=1+d.courage;
   if(d.rbdDmg)own*=1+d.rbdDmg*baseMiss();
+  const spite=d.hater&&G.towers.some(o=>o!==t&&!o.down&&o.def.id===d.hater.id&&dist(t.x,t.y,o.x,o.y)<=t.rg);   // Spiteful Hater: the rival is in range
+  if(spite)own*=1+d.hater.dmg;
   if(d.hr&&boss)own*=1.5;   // Heavenly Restriction: +50% DMG with a Boss in range
   // ... versus OUTSIDE effects (auras, tag buffs, ability buffs, transformations, boss debuffs), shown as the * multiplier
   let out=1+t.aD+t.gD+t.lD+(t.rvD||0)+(G.theme?G.tb.dmg:0);   // ally bonuses add together
@@ -1698,6 +1770,7 @@ function calc(t){
   if(d.zen)s*=1-Math.min(d.zen.cap,t.kills*d.zen.per);
   let so=Math.max(.3,1-t.aS-t.gS-t.lS-(G.theme?G.tb.spa:0)-(t.bdC||0)-(d.courage&&hurtT(t)?d.courage:0));
   if(t.form.t>0)so*=t.form.spa;
+  if(spite)so*=1-d.hater.spa;
   if(t.shrine.t>0)so*=t.shrine.spa;
   if(t.debSt>0)so*=1+t.debS;
   t.mS=so;t.sp=Math.max(.1,s*so);
@@ -1810,6 +1883,7 @@ function applyDot(e,t,dps,dur,ty){   // one DOT per type (Bleed, Poison, Burn) c
   if(!c||dps>=c.dps)e.dots[ty]={dps,t:dur,src:t};else c.t=Math.max(c.t,dur);
   e.dot=Object.values(e.dots)[0]||null;   // e.dot stays as the 'has any DOT' flag
 }
+function hemoMul(e){for(const t of G.towers){if(t.down||!t.def.hemo)continue;if(dist(t.x,t.y,e.x,e.y)<=t.rg+e.r)return 1+t.def.hemo}return 1}   // Hemophobia: Bleed-type DOTs in range are more effective
 function dealDmg(e,dmg,t,crit){
   if(e.dead)return;
   if(e.shield>0&&!(t&&t.def&&(t.def.soul||t.soulNow))){e.shield--;dmg*=.2;addText(e.x,e.y-e.r-12,'SHIELD!','#7ad7ff',.7,true);sfx('hit',0)}   // Shielded: a single hit breaks a shield, but only 20% of its damage goes through (Soul Hit ignores shields)
@@ -1820,14 +1894,15 @@ function dealDmg(e,dmg,t,crit){
 function kill(e,t){
   if(e.dead)return;e.dead=true;G.kills++;G.yen+=e.rew*(1+(t?t.mod.income:0));
   if(e.boss){G.bk++;bump('bosses')}bump('kills');
-  if(t){t.kills++;SAVE.kills[t.def.id]=(SAVE.kills[t.def.id]||0)+1;if(t.def.arise&&G.summons.length<40&&Math.random()<1/3)G.summons.push({o:t,ic:'👤',m:.6,sp:.6,cd:.2,t:4,rm:1,slow:0,ramp:0,hits:0,ang:Math.random()*6.28});const spr=t.def.spirit;if(spr&&G.summons.length<40&&Math.random()<spr.ch)G.summons.push({o:t,ic:'👹',m:spr.m,sp:.6,cd:.2,t:spr.t,rm:1,slow:0,ramp:0,hits:0,ang:Math.random()*6.28})}
+  if(t){t.kills++;if(t.def.killHeal&&!t.down)t.hp=Math.min(t.maxhp,t.hp+t.maxhp*t.def.killHeal);SAVE.kills[t.def.id]=(SAVE.kills[t.def.id]||0)+1;if(t.def.arise&&G.summons.length<40&&Math.random()<1/3)G.summons.push({o:t,ic:'👤',m:.6,sp:.6,cd:.2,t:4,rm:1,slow:0,ramp:0,hits:0,ang:Math.random()*6.28});const spr=t.def.spirit;if(spr&&G.summons.length<40&&Math.random()<spr.ch)G.summons.push({o:t,ic:'👹',m:spr.m,sp:.6,cd:.2,t:spr.t,rm:1,slow:0,ramp:0,hits:0,ang:Math.random()*6.28})}
   sfx('kill');
   G.fx.push({k:'ring',x:e.x,y:e.y,r:4,R:e.r+14,t:.3,T:.3,col:'#ffffff'});
 }
 function hit(t,e,mult){
   const d=t.def,S=t.mod;let dmg=t.dm*mult;
-  const cc=Math.min(.6,(d.crit?d.crit[0]:.05)+S.critRate);   // crit chance is capped at 60%
-  let cm=(d.crit?d.crit[1]:1.5)*(1+S.critDmg);
+  const fc=t.form.t>0&&t.form.crit?t.form.crit:null;   // transformations can also buff crit chance / crit DMG (Emperor Time)
+  const cc=Math.min(.6,(d.crit?d.crit[0]:.05)+S.critRate+(fc?fc[0]:0));   // crit chance is capped at 60%
+  let cm=(d.crit?d.crit[1]:1.5)*(1+S.critDmg)*(fc?1+fc[1]:1);
   if(e.boss)cm+=(d.critBoss||0)+S.critBoss;
   let isC=false;
   if(t.critQ>0){t.critQ--;isC=true}else isC=Math.random()<cc;
@@ -1842,6 +1917,7 @@ function hit(t,e,mult){
   if(e.dead)return;
   if(d.dot){const K=DOTS[d.dot];applyDot(e,t,K.x*t.dm/K.y*(1+S.dotDmg),K.y*(1+S.dotDur),d.dot)}
   if(d.dot2&&!e.dead){const K=DOTS[d.dot2];applyDot(e,t,K.x*t.dm/K.y*(1+S.dotDmg),K.y*(1+S.dotDur),d.dot2)}
+  if(d.formDot&&t.form.t>0&&!e.dead){const K=DOTS[d.formDot];applyDot(e,t,K.x*t.dm/K.y*(1+S.dotDmg),K.y*(1+S.dotDur),d.formDot)}   // transformed: attacks also apply this DOT (Rev Up / Unsheathe)
   if(d.slow){e.slow=Math.max(e.slow,d.slow[0]);e.slowT=Math.max(e.slowT,d.slow[1])}
   if(d.freeze&&Math.random()<d.freeze[0])freezeE(e);
 }
@@ -1859,10 +1935,12 @@ function useActive0(t,i){
   if(a.t==='shock'&&!shockTargets(t).length){addText(t.x,t.y-26,'No target','#ffd23f',.8);return}
   if(a.t==='parade'&&!(t.kills>0)){addText(t.x,t.y-26,'No spirits yet','#ffd23f',.8);return}
   if(a.t==='rbeam'&&!G.enemies.some(e=>!e.dead&&inRange(t,e))){addText(t.x,t.y-26,'No target','#ffd23f',.8);return}
+  if(a.base&&G.base<=a.base){addText(t.x,t.y-26,'Not enough base HP','#ff5a5a',.8);return}
   t.cds[i]=a.cd;calc(t);
+  if(a.base){G.base-=a.base;addText(450,300,'-'+a.base+' base HP','#ff5a5a',1.2,true);G.fx.push({k:'flash',t:.25,T:.25,col:'#ff3030'})}   // some actives cost base HP ("stocks")
   const live=()=>G.enemies.filter(e=>!e.dead);
   G.texts.push({x:t.x,y:t.y-30,s:a.n+'!',col:'#ffd23f',t:1.3,big:true});
-  sfx(a.t==='summon'?'summon':(a.t==='freeze'||a.t==='void'||(a.t==='map'&&a.stun&&!a.m))?'stun':['nova','nbnova','map','beam','burn','random','dotblast','shrine','rbeam','parade'].indexOf(a.t)>=0?'nuke':'ability');
+  sfx(a.t==='summon'?'summon':(a.t==='freeze'||a.t==='void'||(a.t==='map'&&a.stun&&!a.m))?'stun':['nova','nbnova','map','beam','burn','random','dotblast','shrine','rbeam','parade','contract'].indexOf(a.t)>=0?'nuke':'ability');
   switch(a.t){
     case 'nova':{const R=t.rg*(a.rm||1);live().forEach(e=>{if(dist(t.x,t.y,e.x,e.y)<=R+e.r)blast(t,e,a.m)});G.fx.push({k:'ring',x:t.x,y:t.y,r:10,R:R,t:.5,T:.5,col:'#ffd23f'});break}
     case 'nbnova':{const R=t.rg*(a.rm||1);live().forEach(e=>{if(!e.boss&&dist(t.x,t.y,e.x,e.y)<=R+e.r)blast(t,e,a.m)});G.fx.push({k:'ring',x:t.x,y:t.y,r:10,R:R,t:.5,T:.5,col:'#c98a4b'});break}
@@ -1878,16 +1956,26 @@ function useActive0(t,i){
     case 'void':{const R=t.rg*(a.rm||1);live().forEach(e=>{if(dist(t.x,t.y,e.x,e.y)>R+e.r)return;if(stunnable(e))stunE(e);else confuseE(e)});G.fx.push({k:'flash',t:.5,T:.5,col:'#b6f0ff'});G.fx.push({k:'ring',x:t.x,y:t.y,r:10,R:R,t:.6,T:.6,col:'#7ad7ff'});break}   // Unlimited Void: stun, or Confusion on anything that can't be stunned
     case 'rbeam':{const e=live().filter(x=>inRange(t,x)).sort((x,y)=>y.hp-x.hp)[0];if(e){blast(t,e,a.m);G.fx.push({k:'line',x1:t.x,y1:t.y,x2:e.x,y2:e.y,t:.5,T:.5,col:'#ffd23f',w:8})}break}   // Hitman: strongest enemy IN RANGE
     case 'parade':{const k=t.kills||0;t.soulNow=true;live().forEach(e=>blast(t,e,k*NIGHT_PER_KILL));t.soulNow=false;t.kills=0;G.fx.push({k:'flash',t:.6,T:.6,col:'#9b4dff'});G.fx.push({k:'ring',x:t.x,y:t.y,r:10,R:260,t:.8,T:.8,col:'#9b4dff'});addText(t.x,t.y-44,k+' spirits released','#c9a0ff',1.2,true);break}   // Night Parade: 1% of the unit's DMG per match kill, then match kills reset
+    case 'contract':{   // Full Contract: 100x DMG to the strongest enemy on the map, then this unit is deleted for the rest of the match
+      const e=live().sort((x,y)=>y.hp-x.hp)[0];
+      if(e){blast(t,e,a.m);G.fx.push({k:'line',x1:t.x,y1:t.y,x2:e.x,y2:e.y,t:.6,T:.6,col:'#ff4d6d',w:10})}
+      const ak=G.towers.find(x=>x.def.id==='aki'&&!x.down&&dist(x.x,x.y,t.x,t.y)<=x.rg);   // inside Topknot Hunter's range: drops a Final Cigarette
+      if(ak){SAVE.items.cig=(SAVE.items.cig||0)+1;save();addText(t.x,t.y-46,'Final Cigarette!','#ffd23f',1.6,true);toast('🚬 Final Cigarette obtained!')}
+      G.gone=G.gone||{};G.gone[t.def.id]=true;
+      G.towers.forEach(x=>{if(x.prot===t)x.prot=null});G.towers=G.towers.filter(x=>x!==t);
+      if(G.sel===t)G.sel=null;G.abilDirty=true;G.mgrDirty=true;buildSide();updateHotbar();break}
     case 'crits':{t.critQ+=a.hits;break}
     case 'lionheart':{G.lhSel=t;toast('Lion Heart: click an ally to protect');break}
     case 'shrine':{t.shrine={t:a.dur,spa:a.spa};G.fx.push({k:'flash',t:.4,T:.4,col:'#ff3d3d'});G.fx.push({k:'ring',x:t.x,y:t.y,r:10,R:t.rg,t:.6,T:.6,col:'#ff3d3d'});break}
-    case 'transform':{t.form={t:a.dur,dmg:a.dmg,spa:a.spa,rng:a.rng};G.fx.push({k:'flash',t:.5,T:.5,col:'#ffe14d'});G.fx.push({k:'ring',x:t.x,y:t.y,r:10,R:70,t:.6,T:.6,col:'#ffe14d'});break}
+    case 'transform':{t.form={t:a.dur,dmg:a.dmg,spa:a.spa,rng:a.rng,crit:a.crit};G.fx.push({k:'flash',t:.5,T:.5,col:'#ffe14d'});G.fx.push({k:'ring',x:t.x,y:t.y,r:10,R:70,t:.6,T:.6,col:'#ffe14d'});break}
     case 'dotblast':{live().forEach(e=>{if(e.dot)blast(t,e,a.m)});G.fx.push({k:'flash',t:.3,T:.3,col:'#ff6fa8'});break}
     case 'summon':{for(let k=0;k<(a.cnt||1);k++)G.summons.push({o:t,ic:a.ic,m:a.m,sp:a.sp,cd:.2+k*.15,t:a.dur,rm:a.rm||1,slow:a.slow||0,ramp:a.ramp||0,hits:0,ang:Math.random()*6.28+k*3.14});break}
   }
 }
 /* auto-ability: only fires when it would actually do something */
 function wantAuto(t,a){
+  if(a.t==='contract')return false;   // Full Contract deletes the unit: never auto-cast
+  if(a.base&&G.base<=a.base*2)return false;   // never auto-cast a base-HP-costing active when the base is low
   if(a.t==='cash')return true;
   if(a.t==='heal')return G.towers.some(x=>x.down||x.hp<x.maxhp*.55);
   const L=G.enemies.filter(e=>!e.dead);if(!L.length)return false;
@@ -1967,7 +2055,7 @@ function step(dt){
     if(e.regen&&!(e.dots&&(e.dots.bleed||e.dots.mutilate))&&e.hp<e.mhp)e.hp=Math.min(e.mhp,e.hp+e.mhp*.01*dt);   // Regenerating: +1% max HP per second, stopped by Bleed / Mutilate
     if(e.dots){
       let any=false;
-      for(const k in e.dots){const d=e.dots[k];e.hp-=d.dps*dt*(e.fear>0?1.15:1);d.t-=dt;if(d.t<=0)delete e.dots[k];else any=true;if(e.hp<=0){kill(e,d.src);break}}
+      for(const k in e.dots){const d=e.dots[k];e.hp-=d.dps*dt*(e.fear>0?1.15:1)*((k==='bleed'||k==='mutilate')?hemoMul(e):1);d.t-=dt;if(d.t<=0)delete e.dots[k];else any=true;if(e.hp<=0){kill(e,d.src);break}}
       if(!any)e.dot=null;
       if(e.hp<=0)continue;
     }
@@ -1981,6 +2069,7 @@ function step(dt){
         e.at=1.3;const dmg=(6+G.wave*.8)*(e.boss?2.5:1);
         for(const t of G.towers){
           if(t.down||dist(t.x,t.y,e.x,e.y)>e.r+34)continue;
+          if(e.boss&&t.def.bossProof)continue;
           hurt(t,dmg);
         }
       }
@@ -2041,8 +2130,8 @@ function step(dt){
         t.soulNow=false;
         if(wp===2)tg.forEach(e=>{if(!e.dead&&confuseE(e))G.fx.push({k:'ring',x:e.x,y:e.y,r:5,R:e.r+12,t:.3,T:.3,col:'#e07bff'})});   // Fly Curses
         if(d.remote&&t.shots%d.remote[0]===0){   // Remote Punch: every Nth attack also hits the furthest enemy in range
-          const far=G.enemies.filter(e=>!e.dead&&inRange(t,e)).sort((a,b)=>dist(t.x,t.y,b.x,b.y)-dist(t.x,t.y,a.x,a.y))[0];
-          if(far){hit(t,far,d.remote[1]);G.fx.push({k:'line',x1:t.x,y1:t.y,x2:far.x,y2:far.y,t:.2,T:.2,col:'#ffd23f',w:5});addText(far.x,far.y-far.r-14,'Remote Punch!','#ffd23f',.7,true)}
+          const far=G.enemies.filter(e=>!e.dead&&dist(t.x,t.y,e.x,e.y)<=t.rg*(1+(d.remote[2]||0))+e.r).sort((a,b)=>dist(t.x,t.y,b.x,b.y)-dist(t.x,t.y,a.x,a.y))[0];
+          if(far){hit(t,far,d.remote[1]);G.fx.push({k:'line',x1:t.x,y1:t.y,x2:far.x,y2:far.y,t:.2,T:.2,col:'#ffd23f',w:5});addText(far.x,far.y-far.r-14,(d.remoteName||'Remote Punch')+'!','#ffd23f',.7,true)}
         }
         t.cd=t.sp;
       }else t.cd=0;
@@ -2197,24 +2286,42 @@ function pickSlot(i){
   if(G.mgrOpen)toggleMgr(false);G.placing=G.placing===i?null:i;G.sel=null;buildSide();updateHotbar();
 }
 
-function sideActs(d,lvl,live){return d.a.map((a,i)=>{const ok=lvl===undefined||lvl>=(a.u||1);return `<p class="act ${ok?'':'lock'}"><b>${ok?'':'🔒 '}${a.n}</b> (${a.cd}s) ${ok?'':'· unlocks at Lv '+(a.u||1)}<br>${a.d}${live&&ok?`<br><button class="btn sd-ab" data-ab="${i}" style="margin-top:4px"></button>${a.t==='lionheart'?' <button class="atog" id="sd-lhoff">Off</button>':''}`:''}</p>`}).join('')}
+let SIDEV=null;   // {k:what the panel is showing, v:'p'|'a'}: which detail view (Passive(s) / Active(s)) replaces the side box
+const actHead=d=>d.a.length>1?'Actives':'Active';
+function sideBtns(d){return `<div class="sdbtns">${d.p?`<button class="btn sd-pv" data-v="p">${passHead(d.p)}</button>`:''}${d.a.length?`<button class="btn sd-pv" data-v="a">${actHead(d)}</button>`:''}</div>${d.p?'':'<p class="mut" style="margin:6px 0">No passive.</p>'}`}
+function sideDetail(d,v,lvl){   // full passive / active descriptions: replaces the whole side box until Back is pressed
+  const head=`<div class="sd-head" style="--rc:${RAR[d.r].c}"><span class="big">${d.ic}</span><div><b>${d.n}</b><div class="mut">${d.r} · ${d.role}</div></div></div>`;
+  const body=v==='p'?`<h3>${passHead(d.p)}</h3><div class="pas">${d.p?passHtml(d.p):'No passive.'}</div>`
+    :`<h3>${actHead(d)}</h3>`+d.a.map(a=>{const ok=lvl===undefined||lvl>=(a.u||1);return `<p class="act ${ok?'':'lock'}"><b>${ok?'':'🔒 '}${a.n}</b> (${a.cd}s cooldown) <span class="mut">· unlocks at Lv ${a.u||1}${ok?'':' (locked)'}</span><br>${a.d}</p>`}).join('');
+  return `<div class="sdview">${head}${body}<div class="row"><button class="btn" id="sd-back">← Back</button></div></div>`}
+function sideActs(d,lvl){return d.a.map((a,i)=>{const ok=lvl>=(a.u||1);return `<p class="act ${ok?'':'lock'}"><b>${ok?'':'🔒 '}${a.n}</b> (${a.cd}s)${ok?`<br><button class="btn sd-ab" data-ab="${i}" style="margin-top:4px"></button>${a.t==='lionheart'?' <button class="atog" id="sd-lhoff">Off</button>':''}`:' · unlocks at Lv '+(a.u||1)}</p>`}).join('')}   // live cast buttons only; the full text lives behind the Active(s) button
+function bindSideBtns(d,lvl,redo){
+  $$('#side .sd-pv').forEach(b=>{b.onclick=()=>{SIDEV={k:SIDEV_KEY,v:b.dataset.v};redo()}});
+  const bk=$('#sd-back');if(bk)bk.onclick=()=>{SIDEV=null;redo()};
+}
+let SIDEV_KEY=null;
 function buildSide(){
   const el=$('#side'),t=G.sel;
   if(!t){
     const p=G.placing!==null?DEF[SAVE.loadout[G.placing]]:null;
-    el.innerHTML=p?`<h3>Placing ${p.n}</h3><p class="mut">${p.role.toUpperCase()} · ${p.r}</p><div class="pas">${p.p?passHtml(p.p):'No passive.'}</div>${sideActs(p)}<p class="mut">Click an open spot on the map. Press Esc to cancel.</p>`
+    SIDEV_KEY=p?'place:'+p.id:null;if(!SIDEV||SIDEV.k!==SIDEV_KEY)SIDEV=null;
+    if(p&&SIDEV){el.innerHTML=sideDetail(p,SIDEV.v);bindSideBtns(p,undefined,buildSide);return}
+    el.innerHTML=p?`<h3>Placing ${p.n}</h3><p class="mut">${p.role.toUpperCase()} · ${p.r}</p>${sideBtns(p)}<p class="mut">Click an open spot on the map. Press Esc to cancel.</p>`
       :`<h3>${G.map.name}</h3><p class="mut">Pick a unit from the bar below (or press 1–6) and click the map. Click a placed unit to upgrade it.</p>
       <p>Enemies that reach the 🏯 hurt your base. Tanks and bosses smash nearby units.</p><p class="mut">Space = skip the wait for the next wave. Waves also start on their own after ${INTERMISSION}s. <b>Auto Skip</b> starts the next wave a few seconds after the last enemy spawns, or after 30s at the latest.</p>`;
+    if(p)bindSideBtns(p,undefined,buildSide);
     return;
   }
   const d=t.def;
+  SIDEV_KEY=t;if(!SIDEV||SIDEV.k!==SIDEV_KEY)SIDEV=null;
+  if(SIDEV){el.innerHTML=sideDetail(d,SIDEV.v,t.lvl);bindSideBtns(d,t.lvl,buildSide);return}
   el.innerHTML=`<div class="sd-head" style="--rc:${RAR[d.r].c}"><span class="big">${d.ic}</span><div><b>${d.n}</b><div class="mut">${d.r} · ${d.role}</div></div></div>
    <div class="stats"><div>Level <b id="sd-lvl"></b></div><div>Damage/hit <b id="sd-dmg"></b></div><div>Cooldown <b id="sd-cd"></b></div><div>DPS <b id="sd-dps"></b></div><div>Range <b id="sd-rng"></b></div><div>HP <b id="sd-hp"></b></div><div>Kills <b id="sd-k"></b></div><div>Crit <b id="sd-crit"></b></div></div>
    <div class="mut" style="font-size:11px">* = changed by auras, buffs or debuffs</div>
    <div class="chain">${tagChips(d)}</div>
-   <div class="pas">${d.p?passHtml(d.p):'No passive.'}</div><p class="mut" style="font-size:12px">${aoeTxt(d)}</p>
+   ${sideBtns(d)}<p class="mut" style="font-size:12px">${aoeTxt(d)}</p>
    ${(SAVE.sys[d.id]||[]).length?`<div class="chain">${pathChips(d.id)}</div>`:''}
-   ${sideActs(d,t.lvl,true)}
+   ${sideActs(d,t.lvl)}
    ${d.a.length?'<div class="row"><button class="btn" id="sd-auto"></button></div>':''}
    <div class="row"><button class="btn" id="sd-aup"></button><button class="btn" id="sd-pri" style="flex:none" title="Upgrade priority: 1 is upgraded first when several units can be upgraded"></button></div>
    <div class="row"><button class="btn" id="sd-mode"></button><button class="btn" id="sd-vfx" style="flex:none"></button></div>
@@ -2226,6 +2333,7 @@ function buildSide(){
   $('#sd-pri').onclick=()=>cyclePri(t.def.id);
   $('#sd-up').onclick=()=>upgrade(t);
   $('#sd-sell').onclick=()=>sell(t);
+  bindSideBtns(d,t.lvl,buildSide);
   $$('#side .sd-ab').forEach(b=>{b.onclick=()=>{if(!canAct())return;useActive(t,+b.dataset.ab)}});   // this unit's own abilities
   {const lo=$('#sd-lhoff');if(lo)lo.onclick=()=>{t.prot=null;G.lhSel=null}}
   updateSide();
