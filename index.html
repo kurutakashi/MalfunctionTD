@@ -311,11 +311,11 @@ window.MUSIC_META={"story_t": {"frames": 661500, "rate": 44100}, "raids_n": {"fr
    DATA  — edit this section to add units, maps, items and upgrades
    ===================================================================== */
 const RAR={
-  Rare:     {c:'#4aa3ff',rate:60},
-  Epic:     {c:'#b06cff',rate:28},
-  Legendary:{c:'#ffb23e',rate:9},
-  Mythic:   {c:'#ff4d6d',rate:2.5},
-  Secret:   {c:'#2ef0c8',rate:0.5},
+  Rare:     {c:'#4aa3ff',rate:80},
+  Epic:     {c:'#b06cff',rate:12},
+  Legendary:{c:'#ffb23e',rate:5.5},
+  Mythic:   {c:'#ff4d6d',rate:2.49},
+  Secret:   {c:'#2ef0c8',rate:0.01},
   Malfunction:{c:'#ff2bd6',rate:0}
 };
 const RN=Object.keys(RAR);
@@ -426,8 +426,8 @@ U('Mythic','geto2','Evil Curse Eater','Suguru Geto','🔮','dps',900,3.6,135,210
 
 /* ---------- SECRET ---------- */
 // Damage should range from 2000-2500 (Raw DPS=350) //
-U('Secret','rimuru','Slime God','Rimuru Tempest','🌌','dps',2000,5.71,150,5385,1,{r:0,n:99,all:true},{evo:true,grow:{kill:.1,cap:.02},auraSlow:.25,statusEvery:5,p:'Predator: +2% DMG per kill (max +50%). Enemies in range are 25% slower. Raging Elements: every 5th attack inflicts a random status effect (Freeze, Burn or Shock) on every enemy it hits.',a:[{n:'Beelzebuth',d:'5× DMG to every enemy on the map.',cd:60,u:5,t:'map',m:5}]});
 U('Secret','shanks','One-armed Pirate','Figurland Shanks','🏴‍☠️','dps',2200,6.28,160,4000,1,{r:0,n:1},{bossDmg:1.2,auraSlow:.3,p:"Conqueror's Presence: enemies in range are 30% slower. +20% DMG to bosses.",a:[{n:'Haki Burst',d:'Stun all enemies for 4s and deal 4× DMG to all.',cd:70,u:5,t:'map',stun:4,m:4}]});
+U('Secret','rimuru','Slime God','Rimuru Tempest','🌌','dps',2000,5.71,150,5385,1,{r:0,n:99,all:true},{evo:true,grow:{kill:.1,cap:.02},auraSlow:.25,statusEvery:5,p:'Predator: +2% DMG per kill (max +50%). Enemies in range are 25% slower. Raging Elements: every 5th attack inflicts a random status effect (Freeze, Burn or Shock) on every enemy it hits.',a:[{n:'Beelzebuth',d:'5× DMG to every enemy on the map.',cd:60,u:5,t:'map',m:5}]});
 U('Secret','sjw4','S-Rank Hunter','Sung Jinwoo','🌑','dps',2200,6.29,140,3885,1,{r:0,n:1},{evo:true,dot:'poison',arise:true,p:'Arise: defeated enemies have a 1/3 chance to become shadow soldiers.'});
 // Upd 0.5 //
 U('Secret','toji','Broke Assassin','Toji Fushiguro','💪','dps',2100,6,120,3200,1,{r:0,n:1},{noBanner:true,hr:true,arsenal:true,p:'Heavenly Restriction (Physical): while a Fast enemy is in range, 30% shorter cooldown and +25% range. While a Boss is in range, +50% DMG and +25% range. These stack with each other. Curse Worm Arsenal: every 3 attacks he cycles weapons. Heavenly Spear (attacks go through shields), 1000 Mile Chain (+25% range), Fly Curses (attacks apply Confusion).',a:[{n:'Hitman',d:'40× DMG to the strongest enemy in range.',cd:150,u:3,t:'rbeam',m:40}]});
