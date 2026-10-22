@@ -1166,8 +1166,8 @@ function openUnit(id){
   evs.forEach(ev=>{if(SAVE.inv[ev.to]&&DEF[ev.to])xf.push([id,ev.to])});
   if(EVO_FROM[id]&&SAVE.inv[EVO_FROM[id]])xf.push([EVO_FROM[id],id]);
   const xferHtml=xf.length?'<div class="evo" style="border-style:solid"><b>⭐ Star Transfer</b><br><span class="mut">Move ★ from a pre-evolution to its evolved form without evolving again. Costs 1 🔮 System Crystal per ★ (you have '+item('crystal')+').</span>'+xf.map(([a,b])=>{
-    const A=DEF[a],B=DEF[b],k=Math.min(Math.max(0,SAVE.inv[a]-1),Math.max(0,5-stars(b))),kAll=Math.min(k,item('crystal'));
-    const why=SAVE.inv[a]<=1?`${A.n} has no spare ★ to move (its first copy always stays; you need duplicates or Star Crystals on it).`:stars(b)>=5?`${B.n} is already 5★.`:item('crystal')<1?'You need at least 1 🔮 System Crystal.':'';
+    const A=DEF[a],B=DEF[b],k=Math.min(Math.max(0,SAVE.inv[a]),Math.max(0,5-stars(b))),kAll=Math.min(k,item('crystal'));
+    const why=stars(b)>=5?`${B.n} is already 5★.`:item('crystal')<1?'You need at least 1 🔮 System Crystal.':'';
     return `<p style="margin:6px 0">${A.ic} ${A.n} (${stars(a)}★) → ${B.ic} ${B.n} (${stars(b)}★)</p>${why?`<p class="mut" style="margin:2px 0;font-size:12px">⚠ ${why}</p>`:''}<div class="row" style="flex-wrap:wrap"><button class="btn" data-xf="${a}|${b}|1" ${k>=1&&item('crystal')>=1?'':'disabled'}>Transfer 1★ · 1 🔮</button><button class="btn" data-xf="${a}|${b}|${kAll}" ${kAll>=2?'':'disabled'}>Transfer ${Math.max(kAll,2)>kAll?'all':kAll+'★'}${kAll>=2?' ('+kAll+'★) · '+kAll+' 🔮':''}</button></div>`}).join('')+'</div>':'';
   const S=modOf(id);
   m.hidden=false;
@@ -1214,21 +1214,22 @@ function lvTabs(id,L){   // raw stats and costs for each upgrade level
 function openSys(){renderSystem();$('#sysmodal').hidden=false}
 function starXfer(from,to,k,viewId){   // Star Transfer: 1 System Crystal per ★ moved from a pre-evolution to its owned evolved form
   if(!SAVE.inv[from]||!SAVE.inv[to])return;
-  k=Math.min(k,Math.max(0,SAVE.inv[from]-1),Math.max(0,5-stars(to)));
+  k=Math.min(k,SAVE.inv[from],Math.max(0,5-stars(to)));
   if(k<=0){deny('Nothing to transfer');return}
   if(item('crystal')<k){deny('You need '+k+' 🔮 System Crystal'+(k>1?'s':''));return}
-  SAVE.items.crystal-=k;SAVE.inv[from]-=k;SAVE.inv[to]+=k;
+  SAVE.items.crystal-=k;SAVE.inv[from]-=k;SAVE.inv[to]+=k;if(SAVE.inv[from]<=0){delete SAVE.inv[from];SAVE.loadout=SAVE.loadout.filter(x=>x!==from)}
   MODC={};save();renderAll();openUnit(viewId);toast(k+'★ moved from '+DEF[from].n+' to '+DEF[to].n);sfx('evolve');
 }
 function evolve(id,to){
   const ev=(EVO[id]||[]).find(o=>!to||o.to===to);if(!ev||!SAVE.inv[id])return;
-  if(SAVE.inv[ev.to]&&SAVE.inv[id]<=1){deny('Nothing to gain: you already have '+DEF[ev.to].n);return}   // pre-evo stays behind at 1★ now, so re-evolving would only waste items
+  if(SAVE.inv[ev.to]&&stars(ev.to)>=5){deny('Nothing to gain: '+DEF[ev.to].n+' is already maxed');return}   // pre-evo stays behind at 1★ now, so re-evolving would only waste items
   if(!evoReqs(id,ev).ok){toast('Requirements not met');return}
   if(ev.item)SAVE.items[ev.item]-=ev.n;
   (ev.items||[]).forEach(([k,n])=>{SAVE.items[k]-=n});
   (ev.sac||[]).forEach(s=>{delete SAVE.inv[s];SAVE.loadout=SAVE.loadout.filter(x=>x!==s)});
   if(SAVE.kills[id]){SAVE.kills[ev.to]=(SAVE.kills[ev.to]||0)+SAVE.kills[id]}
-  const had=SAVE.inv[ev.to];SAVE.inv[ev.to]=had?had+SAVE.inv[id]-1:SAVE.inv[id];SAVE.inv[id]=1;   // the pre-evo stays in your collection at 1★   // already own the evolved form: the old unit's dupes are added to it
+  const had=SAVE.inv[ev.to];SAVE.inv[ev.to]=had?had+SAVE.inv[id]-1:SAVE.inv[id];SAVE.inv[id]=1;if(had)addDupe(ev.to);   // evolving into a unit you already own gives it +1 dupe (no ★ by itself)
+  // the pre-evo stays in your collection at 1★   // already own the evolved form: the old unit's dupes are added to it
   if(SAVE.sys[id]){if(!had)SAVE.sys[ev.to]=SAVE.sys[id];delete SAVE.sys[id]}
   if(SAVE.auto[id]!==undefined){SAVE.auto[ev.to]=SAVE.auto[id];delete SAVE.auto[id]}
   if(SAVE.autoUp[id]!==undefined){SAVE.autoUp[ev.to]=SAVE.autoUp[id];delete SAVE.autoUp[id]}
@@ -1428,7 +1429,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[data-unequip]')){if(!SAVE.loadout.length){deny('Your team is already empty');return}SAVE.loadout=[];MV=-1;MODC={};save();renderAll();toast('All units unequipped');return}   // Unequip All
   const s=e.target.closest('[data-tsave]'),l=e.target.closest('[data-tload]');
   if(s){if(!SAVE.loadout.length){deny('Your team is empty');return}SAVE.teams[+s.dataset.tsave]=SAVE.loadout.slice();save();renderAll();toast('Team saved to slot '+(+s.dataset.tsave+1))}
-  else if(l&&!l.disabled){const t=(SAVE.teams[+l.dataset.tload]||[]).filter(x=>SAVE.inv[x]).filter((x,i,a)=>!clash(a.slice(0,i),x));if(!t.length){deny('No units from that team are available');return}SAVE.loadout=t.slice(0,6);save();renderAll();toast('Team '+(+l.dataset.tload+1)+' loaded')}
+  else if(l&&!l.disabled){const t=(SAVE.teams[+l.dataset.tload]||[]).filter(x=>SAVE.inv[x]&&!(EVO[x]||[]).some(o=>SAVE.inv[o.to])).filter((x,i,a)=>!clash(a.slice(0,i),x));if(!t.length){deny('No units from that team are available');return}SAVE.loadout=t.slice(0,6);save();renderAll();toast('Team '+(+l.dataset.tload+1)+' loaded')}
 });
 $('#items').onclick=e=>{const b=e.target.closest('[data-item]');if(b){const i=ITEMS[b.dataset.item];toast(i.ic+' '+i.n+' - '+i.d)}};
 $('#shopbox').onclick=e=>{const b=e.target.closest('[data-buy]');if(!b)return;const r=SHOP[+b.dataset.buy];if(item(r.t)<r.c)return;SAVE.items[r.t]-=r.c;SAVE.items[r.i]=item(r.i)+(r.q||1);save();renderAll();sfx('upgrade');toast('Bought '+(r.q>1?r.q+'× ':'')+ITEMS[r.i].n)};
