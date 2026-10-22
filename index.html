@@ -1228,8 +1228,8 @@ function evolve(id,to){
   (ev.items||[]).forEach(([k,n])=>{SAVE.items[k]-=n});
   (ev.sac||[]).forEach(s=>{delete SAVE.inv[s];SAVE.loadout=SAVE.loadout.filter(x=>x!==s)});
   if(SAVE.kills[id]){SAVE.kills[ev.to]=(SAVE.kills[ev.to]||0)+SAVE.kills[id]}
-  const had=SAVE.inv[ev.to];SAVE.inv[ev.to]=had?had+SAVE.inv[id]-1:SAVE.inv[id];SAVE.inv[id]=1;if(had)addDupe(ev.to);   // evolving into a unit you already own gives it +1 dupe (no ★ by itself)
-  // the pre-evo stays in your collection at 1★   // already own the evolved form: the old unit's dupes are added to it
+  const had=SAVE.inv[ev.to];SAVE.inv[ev.to]=had?had+SAVE.inv[id]-1:SAVE.inv[id];if(dupes(id)>0){SAVE.dupes[id]--;SAVE.inv[id]=1}else delete SAVE.inv[id];if(had)addDupe(ev.to);   // evolving consumes the main unit (a spare dupe, if any, takes its place at 1★); evolving into a unit you already own gives it +1 dupe (no ★ by itself)
+  //   // already own the evolved form: the old unit's dupes are added to it
   if(SAVE.sys[id]){if(!had)SAVE.sys[ev.to]=SAVE.sys[id];delete SAVE.sys[id]}
   if(SAVE.auto[id]!==undefined){SAVE.auto[ev.to]=SAVE.auto[id];delete SAVE.auto[id]}
   if(SAVE.autoUp[id]!==undefined){SAVE.autoUp[ev.to]=SAVE.autoUp[id];delete SAVE.autoUp[id]}
